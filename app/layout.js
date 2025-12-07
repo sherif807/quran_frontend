@@ -38,9 +38,31 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       dir="rtl"
-      className={`${scheherazade.variable} ${scheherazadeBold.variable} ${torahSofer.variable}`}
+  className={`${scheherazade.variable} ${scheherazadeBold.variable} ${torahSofer.variable}`}
     >
-      <head />
+      <head>
+        <link
+          rel="preload"
+          href="/fonts/Scheherazade-Regular.woff"
+          as="font"
+          type="font/woff"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/Scheherazade-Bold.woff"
+          as="font"
+          type="font/woff"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/hebrew/TorahSofer.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="bg-light">
         <div className="container py-3">{children}</div>
       </body>

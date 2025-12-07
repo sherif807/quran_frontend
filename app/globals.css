@@ -3,6 +3,16 @@ body {
   background-color: #f8f9fa;
 }
 
+@font-face {
+  font-family: "TorahSofer";
+  src: url("/fonts/hebrew/TorahSofer.woff2") format("woff2"),
+    url("/fonts/hebrew/TorahSofer.woff") format("woff"),
+    url("/fonts/hebrew/TorahSofer.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -154,7 +164,7 @@ html {
   direction: rtl;
   text-align: right;
   display: block;
-  font-family: var(--font-hebrew), "Times New Roman", serif;
+  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif;
   font-weight: 400;
   color: #212529;
 }
@@ -163,7 +173,7 @@ html {
   font-size: 140%;
   direction: rtl;
   text-align: right;
-  font-family: var(--font-hebrew), "Times New Roman", serif;
+  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif;
   font-weight: 400;
   color: #212529;
 }
