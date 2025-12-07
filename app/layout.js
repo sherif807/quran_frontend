@@ -22,8 +22,7 @@ const torahSofer = localFont({
   src: [
     { path: "../public/fonts/hebrew/TorahSofer.woff2", weight: "400", style: "normal" },
     { path: "../public/fonts/hebrew/TorahSofer.woff", weight: "400", style: "normal" },
-    { path: "../public/fonts/hebrew/TorahSofer.woff2", weight: "700", style: "normal" },
-    { path: "../public/fonts/hebrew/TorahSofer.woff", weight: "700", style: "normal" },
+    { path: "../public/fonts/hebrew/TorahSofer.ttf", weight: "400", style: "normal" },
   ],
   display: "swap",
   variable: "--font-hebrew",
