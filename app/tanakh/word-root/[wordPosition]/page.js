@@ -1,6 +1,7 @@
 import Header from "../../../components/Header";
 import TranslationToggle from "../../../components/TranslationToggle";
 import PlayHebrew from "../../../components/PlayHebrew";
+import VerseTranslations from "../../../components/VerseTranslations";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -75,32 +76,11 @@ export default async function TanakhRootPage({ params }) {
                   ))}
                   <span className="hebrew-text sof-pasuq">:</span>
                 </div>
-                <div className="mt-1">
+                <div className="d-flex align-items-center mt-1">
                   <PlayHebrew
                     text={verseProps.words.map((w) => w.displayText).join(" ")}
                   />
-                </div>
-                <div className="translation-container mt-2">
-                  {[...(verseProps.translations || [])]
-                    .sort((a, b) => {
-                      const dirA = (a.direction || "").toLowerCase();
-                      const dirB = (b.direction || "").toLowerCase();
-                      if (dirA === dirB) return 0;
-                      if (dirA === "ltr") return -1;
-                      if (dirB === "ltr") return 1;
-                      return 0;
-                    })
-                    .map((t, idx) => (
-                      <div
-                        key={idx}
-                        className="translation mb-2"
-                        style={{
-                          direction: t.direction || "ltr",
-                          textAlign: t.direction === "rtl" ? "right" : "left",
-                        }}
-                        dangerouslySetInnerHTML={{ __html: t.translationText }}
-                      />
-                    ))}
+                  <VerseTranslations translations={verseProps.translations} />
                 </div>
               </div>
             </div>
