@@ -28,21 +28,23 @@ export default function VerseTranslations({ translations = [] }) {
       >
         <i className="bi bi-translate" />
       </button>
-      {open && (
-        <div className="translation-container mt-2">
-          {sortedTranslations.map((t, idx) => (
-            <div
-              key={idx}
-              className="translation mb-2"
-              style={{
-                direction: t.direction || "ltr",
-                textAlign: t.direction === "rtl" ? "right" : "left",
-              }}
-              dangerouslySetInnerHTML={{ __html: t.translationText }}
-            />
-          ))}
-        </div>
-      )}
+      <div
+        className={`translation-container mt-2 ${
+          open ? "per-verse-open" : ""
+        }`}
+      >
+        {sortedTranslations.map((t, idx) => (
+          <div
+            key={idx}
+            className="translation mb-2 per-verse-open-item"
+            style={{
+              direction: t.direction || "ltr",
+              textAlign: t.direction === "rtl" ? "right" : "left",
+            }}
+            dangerouslySetInnerHTML={{ __html: t.translationText }}
+          />
+        ))}
+      </div>
     </span>
   );
 }

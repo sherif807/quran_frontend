@@ -1,5 +1,4 @@
 import Header from "../../components/Header";
-import TranslationToggle from "../../components/TranslationToggle";
 import PlayHebrew from "../../components/PlayHebrew";
 import CopyHebrew from "../../components/CopyHebrew";
 import VerseTranslations from "../../components/VerseTranslations";
@@ -54,10 +53,8 @@ export default async function TanakhPage({ params }) {
         tanakhMenu={menu}
         selectedBook={selectedBook}
         selectedChapter={selectedChapter}
+        showTranslationToggle
       />
-      <div className="translation-toggle">
-        <TranslationToggle />
-      </div>
 
       <nav aria-label="Tanakh navigation">
         <ul className="pagination justify-content-center mt-2">
@@ -144,7 +141,7 @@ export default async function TanakhPage({ params }) {
                 ))}
                 <span className="hebrew-text sof-pasuq">:</span>
               </span>
-              <div className="d-flex align-items-start mt-1">
+              <div className="d-flex align-items-start mt-2">
                 <PlayHebrew
                   text={verseProps.words.map((w) => w.displayText).join(" ")}
                 />

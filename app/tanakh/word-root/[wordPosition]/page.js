@@ -1,5 +1,4 @@
 import Header from "../../../components/Header";
-import TranslationToggle from "../../../components/TranslationToggle";
 import PlayHebrew from "../../../components/PlayHebrew";
 import CopyHebrew from "../../../components/CopyHebrew";
 import VerseTranslations from "../../../components/VerseTranslations";
@@ -39,10 +38,8 @@ export default async function TanakhRootPage({ params }) {
       <Header
         allSuras={{}}
         tanakhMenu={data.menu || {}}
+        showTranslationToggle
       />
-      <div className="translation-toggle">
-        <TranslationToggle />
-      </div>
       <h3 className="mb-4">{data.title}</h3>
       {Object.entries(data.verseArray || {}).map(([book, chapters]) =>
         Object.entries(chapters).map(([chapter, verses]) =>
@@ -77,7 +74,7 @@ export default async function TanakhRootPage({ params }) {
                   ))}
                   <span className="hebrew-text sof-pasuq">:</span>
                 </div>
-                <div className="d-flex align-items-start mt-1">
+                <div className="d-flex align-items-start mt-2">
                   <PlayHebrew
                     text={verseProps.words.map((w) => w.displayText).join(" ")}
                   />

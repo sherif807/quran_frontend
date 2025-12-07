@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
+import TranslationToggle from "./TranslationToggle";
 
 export default function Header({
   allSuras = {},
@@ -10,6 +11,7 @@ export default function Header({
   tanakhMenu = {},
   selectedBook,
   selectedChapter,
+  showTranslationToggle = false,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,6 +21,11 @@ export default function Header({
       .sort((a, b) => a.number - b.number)
       .map((s) => ({ number: s.number, name: s.name }));
   }, [allSuras]);
+
+  const selectedSuraLabel = useMemo(() => {
+    const match = suraList.find((s) => String(s.number) === String(selectedSuraNumber));
+    return match ? `${match.name} - ${match.number}` : "Select a sura";
+  }, [suraList, selectedSuraNumber]);
 
   const currentBook =
     pathname && pathname.startsWith("/tanakh") ? "Bible" : "Quran";
@@ -130,80 +137,151 @@ export default function Header({
       >
         <div className="d-flex flex-column flex-md-row w-100">
           {suraList.length > 0 && (
-            <ul className="navbar-nav">
-              <li className="nav-item" style={{ minWidth: "200px" }}>
-                <select
-                  className="form-control custom-select"
-                  value={selectedSuraNumber || ""}
-                  onChange={handleSuraChange}
+            <div className="header-dropdown w-100 mb-3 mb-md-0" style={{ maxWidth: "260px" }}>
+              <div className="dropdown w-100">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="suraDropdown"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {selectedSuraLabel}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="suraDropdown"
+                  style={{ maxHeight: "260px", overflowY: "auto" }}
                 >
                   {suraList.map((sura) => (
-                    <option key={sura.number} value={sura.number}>
+                    <button
+                      key={sura.number}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() =>
+                        handleSuraChange({ target: { value: sura.number } })
+                      }
+                    >
                       {sura.name} - {sura.number}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </li>
-            </ul>
+                </div>
+              </div>
+            </div>
           )}
 
-          <ul className="navbar-nav ml-md-3 mt-3 mt-md-0">
-            <li className="nav-item dropdown">
-              <a
-                className="nav-link dropdown-toggle"
-                href="#"
-                id="booksDropdown"
-                role="button"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
+          <div className="ml-md-3 mt-3 mt-md-0">
+            <div className="btn-group" role="group" aria-label="Select source">
+              <Link
+                className={`btn btn-sm ${
+                  currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                href="/1"
               >
-                {currentBook}
-              </a>
-              <div className="dropdown-menu" aria-labelledby="booksDropdown">
-                <Link className="dropdown-item" href="/1">
-                  Quran
-                </Link>
-                <Link className="dropdown-item" href="/tanakh/GEN%201">
-                  Bible
-                </Link>
-              </div>
-            </li>
-          </ul>
+                Quran
+              </Link>
+              <Link
+                className={`btn btn-sm ${
+                  currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                href="/tanakh/GEN%201"
+              >
+                Bible
+              </Link>
+            </div>
+          </div>
         </div>
 
         {pathname && pathname.startsWith("/tanakh") && (
-          <div className="w-100 mt-3">
+          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
+            {showTranslationToggle && (
+              <div className="form-group d-flex align-items-center justify-content-between mb-3">
+                <span className="small text-muted mb-0">Show translations</span>
+                <TranslationToggle />
+              </div>
+            )}
             <div className="form-group">
               <label className="small text-muted mb-1">Books</label>
-              <select
-                className="form-control"
-                value={selectedTanakhBook}
-                onChange={handleBookChange}
-              >
-                <option value="">Select a book</option>
-                {bookOptions.map((book) => (
-                  <option key={book} value={book}>
-                    {book}
-                  </option>
-                ))}
-              </select>
+              <div className="dropdown w-100 header-dropdown">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="bookDropdown"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {selectedTanakhBook || "Select a book"}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="bookDropdown"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() => handleBookChange({ target: { value: "" } })}
+                  >
+                    Select a book
+                  </button>
+                  {bookOptions.map((book) => (
+                    <button
+                      key={book}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() => handleBookChange({ target: { value: book } })}
+                    >
+                      {book}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="form-group">
               <label className="small text-muted mb-1">Chapters</label>
-              <select
-                className="form-control"
-                value={selectedTanakhChapter}
-                onChange={handleChapterChange}
-                disabled={!selectedTanakhBook}
-              >
-                <option value="">Select a chapter</option>
-                {chapterOptions.map((ch) => (
-                  <option key={ch} value={ch}>
-                    {ch}
-                  </option>
-                ))}
-              </select>
+              <div className="dropdown w-100 header-dropdown">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="chapterDropdown"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  disabled={!selectedTanakhBook}
+                >
+                  {selectedTanakhChapter || "Select a chapter"}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="chapterDropdown"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() =>
+                      handleChapterChange({ target: { value: "" } })
+                    }
+                    disabled={!selectedTanakhBook}
+                  >
+                    Select a chapter
+                  </button>
+                  {chapterOptions.map((ch) => (
+                    <button
+                      key={ch}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() =>
+                        handleChapterChange({ target: { value: ch } })
+                      }
+                    >
+                      {ch}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
