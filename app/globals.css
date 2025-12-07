@@ -205,6 +205,39 @@ html {
 .tanakh-verse-card .hebrew-text {
   white-space: normal;
 }
+
+.hide-translations .translation {
+  display: none !important;
+}
+
+.translation-toggle {
+  position: fixed;
+  left: 8px;
+  bottom: 16px;
+  transform: none;
+  z-index: 1100;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 6px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.translation-toggle .theme-switch {
+  width: 32px;
+  height: 18px;
+  margin: 0;
+}
+
+.translation-toggle .slider:before {
+  height: 12px;
+  width: 12px;
+  bottom: 3px;
+  left: 3px;
+}
+
+.translation-toggle input:checked + .slider:before {
+  transform: translateX(14px);
+}
 .wordRootTanakh:hover,
 .wordRootTanakh:visited,
 .wordRootTanakh:focus {

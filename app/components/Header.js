@@ -60,6 +60,8 @@ export default function Header({
     selectedChapter || ""
   );
 
+  // translation toggle moved to floating control on Tanakh pages
+
   const bookOptions = useMemo(() => Object.keys(tanakhMenu), [tanakhMenu]);
   const chapterOptions = useMemo(() => {
     if (!selectedTanakhBook || !tanakhMenu[selectedTanakhBook]) return [];
@@ -95,7 +97,7 @@ export default function Header({
         </div>
 
         <div className="header-switch-center">
-          <div className="theme-switch-wrapper">
+          <div className="theme-switch-wrapper d-flex align-items-center">
             <label className="theme-switch" htmlFor="theme-switch-checkbox">
               <input
                 type="checkbox"

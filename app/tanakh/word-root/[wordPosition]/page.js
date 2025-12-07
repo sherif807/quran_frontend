@@ -1,4 +1,5 @@
 import Header from "../../../components/Header";
+import TranslationToggle from "../../../components/TranslationToggle";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -36,6 +37,9 @@ export default async function TanakhRootPage({ params }) {
         allSuras={{}}
         tanakhMenu={data.menu || {}}
       />
+      <div className="translation-toggle">
+        <TranslationToggle />
+      </div>
       <h3 className="mb-4">{data.title}</h3>
       {Object.entries(data.verseArray || {}).map(([book, chapters]) =>
           Object.entries(chapters).map(([chapter, verses]) =>
