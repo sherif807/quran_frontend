@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function PlayHebrew({ text, onStart, onEnd }) {
+export default function PlayHebrew({ text }) {
   const [speaking, setSpeaking] = useState(false);
 
   const speak = () => {
@@ -32,15 +32,12 @@ export default function PlayHebrew({ text, onStart, onEnd }) {
     }
     utter.onstart = () => {
       setSpeaking(true);
-      onStart && onStart();
     };
     utter.onend = () => {
       setSpeaking(false);
-      onEnd && onEnd();
     };
     utter.onerror = () => {
       setSpeaking(false);
-      onEnd && onEnd();
     };
     window.speechSynthesis.cancel(); // ensure clean start
     window.speechSynthesis.speak(utter);
