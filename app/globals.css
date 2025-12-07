@@ -142,16 +142,6 @@ html {
   color: #17a2b8;
 }
 
-#quranCard {
-  content-visibility: auto;
-  contain-intrinsic-size: 800px;
-}
-
-.tanakh-verse-card .card-body {
-  content-visibility: auto;
-  contain-intrinsic-size: 600px;
-}
-
 #progress-indicator {
   position: fixed;
   right: 0;
