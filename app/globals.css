@@ -238,6 +238,12 @@ html {
 .translation-toggle input:checked + .slider:before {
   transform: translateX(14px);
 }
+
+.play-hebrew-btn {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
 .wordRootTanakh:hover,
 .wordRootTanakh:visited,
 .wordRootTanakh:focus {

@@ -1,5 +1,6 @@
 import Header from "../../components/Header";
 import TranslationToggle from "../../components/TranslationToggle";
+import PlayHebrew from "../../components/PlayHebrew";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -125,12 +126,12 @@ export default async function TanakhPage({ params }) {
               id={`verse-${verseNumber}`}
               data-verse-ref={`${selectedBook} ${selectedChapter}:${verseNumber}`}
             >
-                <span id={`verse-${verseNumber}`} className="hebrew-verse">
-                  <span className="verse-number">{verseNumber}</span>{" "}
+              <span id={`verse-${verseNumber}`} className="hebrew-verse">
+                <span className="verse-number">{verseNumber}</span>{" "}
                 {verseProps.words.map((word, idx) => (
                   <a
                     key={`${word.ref}-${idx}`}
-                className="hebrew-text wordRootTanakh"
+                    className="hebrew-text wordRootTanakh"
                     data-word-position={word.ref}
                     href={`/tanakh/word-root/${encodeURIComponent(word.ref)}`}
                     target="_blank"
@@ -139,6 +140,9 @@ export default async function TanakhPage({ params }) {
                     {word.displayText}{" "}
                   </a>
                 ))}
+                <PlayHebrew
+                  text={verseProps.words.map((w) => w.displayText).join(" ")}
+                />
                 <span className="hebrew-text sof-pasuq">:</span>
               </span>
               <div className="translation-container">

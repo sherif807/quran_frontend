@@ -1,5 +1,6 @@
 import Header from "../../../components/Header";
 import TranslationToggle from "../../../components/TranslationToggle";
+import PlayHebrew from "../../../components/PlayHebrew";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -72,6 +73,9 @@ export default async function TanakhRootPage({ params }) {
                     {word.displayText}{" "}
                   </a>
                   ))}
+                  <PlayHebrew
+                    text={verseProps.words.map((w) => w.displayText).join(" ")}
+                  />
                   <span className="hebrew-text sof-pasuq">:</span>
                 </div>
                 <div className="translation-container mt-2">
