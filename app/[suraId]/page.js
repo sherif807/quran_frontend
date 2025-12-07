@@ -45,6 +45,9 @@ function Verse({ verse, selectedSuraNumber }) {
           return null;
         }
         const wordPosition = `${selectedSuraNumber}:${verse.verseNumber}:${word.position}`;
+        const arabicWord = word.conversion.lettersArray
+          .map((letter) => letter.unicode)
+          .join("");
         return (
           <span key={word.position} className="word-wrapper">
             <a
@@ -54,11 +57,7 @@ function Verse({ verse, selectedSuraNumber }) {
               target="_blank"
               rel="noreferrer"
             >
-              <span className="house">
-                {word.conversion.lettersArray.map((letter, idx) => (
-                  <span key={idx}>{letter.unicode}</span>
-                ))}
-              </span>
+              <span className="house">{arabicWord}</span>
             </a>{" "}
           </span>
         );
