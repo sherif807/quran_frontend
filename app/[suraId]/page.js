@@ -1,6 +1,17 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
+export const dynamic = "force-static";
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  // Pre-build all 114 suras for faster loads and no white flashes on scroll.
+  return Array.from({ length: 114 }, (_, idx) => {
+    const num = idx + 1;
+    return { suraId: String(num) };
+  });
+}
+
 async function fetchSuraData(suraId) {
   const res = await fetch(`${API_BASE}/quran/${suraId}`, {
     // Cache on the Next.js side to reduce repeated API calls for read-only data.
