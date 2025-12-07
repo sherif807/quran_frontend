@@ -1,6 +1,7 @@
 import "./globals.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
+import { Noto_Serif_Hebrew } from "next/font/google";
 
 const scheherazade = localFont({
   src: "../public/fonts/Scheherazade-Regular.woff",
@@ -18,12 +19,10 @@ const scheherazadeBold = localFont({
   variable: "--font-scheherazade-bold",
 });
 
-const torahSofer = localFont({
-  src: [
-    { path: "../public/fonts/hebrew/TorahSofer.woff2", weight: "400", style: "normal" },
-    { path: "../public/fonts/hebrew/TorahSofer.woff", weight: "400", style: "normal" },
-    { path: "../public/fonts/hebrew/TorahSofer.ttf", weight: "400", style: "normal" },
-  ],
+const notoHebrew = Noto_Serif_Hebrew({
+  weight: ["400", "700"],
+  style: ["normal"],
+  subsets: ["hebrew"],
   display: "swap",
   variable: "--font-hebrew",
 });
@@ -38,7 +37,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       dir="rtl"
-  className={`${scheherazade.variable} ${scheherazadeBold.variable} ${torahSofer.variable}`}
+      className={`${scheherazade.variable} ${scheherazadeBold.variable} ${notoHebrew.variable}`}
     >
       <head>
         <link
@@ -60,20 +59,6 @@ export default function RootLayout({ children }) {
           href="/fonts/hebrew/TorahSofer.woff2"
           as="font"
           type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/hebrew/TorahSofer.woff"
-          as="font"
-          type="font/woff"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/hebrew/TorahSofer.ttf"
-          as="font"
-          type="font/ttf"
           crossOrigin="anonymous"
         />
       </head>
