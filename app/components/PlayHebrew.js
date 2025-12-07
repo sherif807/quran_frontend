@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getSpeechSettings } from "./SpeechSettings";
 
 export default function PlayHebrew({ text }) {
   const [speaking, setSpeaking] = useState(false);
@@ -16,9 +17,17 @@ export default function PlayHebrew({ text }) {
       return;
     }
 
+    const { rate, pitch, voice } = getSpeechSettings();
+    const voices = window.speechSynthesis.getVoices() || [];
+    const chosenVoice = voices.find((v) => v.name === voice) || null;
+
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "he-IL";
-    utter.rate = 0.95;
+    utter.rate = rate || 0.95;
+    utter.pitch = pitch || 1;
+    if (chosenVoice) {
+      utter.voice = chosenVoice;
+    }
     utter.onstart = () => setSpeaking(true);
     utter.onend = () => setSpeaking(false);
     utter.onerror = () => setSpeaking(false);
