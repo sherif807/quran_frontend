@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap");
 
 body {
   font-family: "Scheherazade New", "ScheherazadeRW", serif;
@@ -127,6 +127,21 @@ html {
   transition: color 0.8s ease;
 }
 
+.tanakh-verse-card:target .hebrew-text,
+.tanakh-verse-card:target .hebrew-verse {
+  color: #17a2b8;
+  transition: color 0.8s ease;
+}
+
+.tanakh-verse-card:target .card-body {
+  background-color: #e3f7ff;
+  transition: background-color 0.8s ease;
+}
+
+.tanakh-verse-card:target .translation {
+  color: #17a2b8;
+}
+
 #progress-indicator {
   position: fixed;
   right: 0;
@@ -134,6 +149,62 @@ html {
   width: 5px;
   background-color: #dcdfe1;
   z-index: 1000;
+}
+
+.hebrew-verse {
+  font-size: 140%;
+  direction: rtl;
+  text-align: right;
+  display: block;
+  font-family: "Noto Serif Hebrew", "Times New Roman", serif;
+  color: #212529;
+}
+
+.hebrew-text {
+  font-size: 140%;
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Serif Hebrew", "Times New Roman", serif;
+  color: #212529;
+}
+
+.wordRootTanakh {
+  cursor: pointer;
+  color: #212529;
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 0.1em;
+}
+
+.wordRootTanakh.text-info {
+  color: #17a2b8 !important;
+}
+
+.wordRootTanakh:hover,
+.wordRootTanakh:visited,
+.wordRootTanakh:focus {
+  color: #212529;
+  text-decoration: none;
+}
+
+.tanakh-verse-card {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.tanakh-verse-card .card-body {
+  background-color: #f7f2d1;
+}
+
+.tanakh-verse-card .hebrew-verse,
+.tanakh-verse-card .hebrew-text {
+  white-space: normal;
+}
+.wordRootTanakh:hover,
+.wordRootTanakh:visited,
+.wordRootTanakh:focus {
+  color: #212529;
+  text-decoration: none;
 }
 
 .theme-switch-wrapper {

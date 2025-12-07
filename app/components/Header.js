@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
 
-export default function Header({ allSuras = {}, selectedSuraNumber }) {
+export default function Header({
+  allSuras = {},
+  selectedSuraNumber,
+  tanakhMenu = {},
+  selectedBook,
+  selectedChapter,
+}) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -47,6 +53,38 @@ export default function Header({ allSuras = {}, selectedSuraNumber }) {
     }
   };
 
+  const [selectedTanakhBook, setSelectedTanakhBook] = useState(
+    selectedBook || ""
+  );
+  const [selectedTanakhChapter, setSelectedTanakhChapter] = useState(
+    selectedChapter || ""
+  );
+
+  const bookOptions = useMemo(() => Object.keys(tanakhMenu), [tanakhMenu]);
+  const chapterOptions = useMemo(() => {
+    if (!selectedTanakhBook || !tanakhMenu[selectedTanakhBook]) return [];
+    return tanakhMenu[selectedTanakhBook];
+  }, [selectedTanakhBook, tanakhMenu]);
+
+  const handleBookChange = (e) => {
+    const book = e.target.value;
+    setSelectedTanakhBook(book);
+    const firstChapter =
+      tanakhMenu[book] && tanakhMenu[book].length ? tanakhMenu[book][0] : "";
+    setSelectedTanakhChapter(firstChapter);
+    if (book && firstChapter) {
+      router.push(`/tanakh/${book}%20${firstChapter}`);
+    }
+  };
+
+  const handleChapterChange = (e) => {
+    const chapter = e.target.value;
+    setSelectedTanakhChapter(chapter);
+    if (selectedTanakhBook && chapter) {
+      router.push(`/tanakh/${selectedTanakhBook}%20${chapter}`);
+    }
+  };
+
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light mb-3 sticky-top shadow-sm">
       <div className="d-flex w-100 align-items-center justify-content-between position-relative header-top">
@@ -84,49 +122,89 @@ export default function Header({ allSuras = {}, selectedSuraNumber }) {
       </div>
 
       <div
-        className="collapse navbar-collapse justify-content-between flex-row-reverse align-items-center"
+        className="collapse navbar-collapse justify-content-between flex-row-reverse align-items-start"
         id="navbarContent"
         dir="rtl"
       >
-        {suraList.length > 0 && (
-          <ul className="navbar-nav">
-            <li className="nav-item" style={{ minWidth: "200px" }}>
-              <select
-                className="form-control custom-select"
-                value={selectedSuraNumber || ""}
-                onChange={handleSuraChange}
+        <div className="d-flex flex-column flex-md-row w-100">
+          {suraList.length > 0 && (
+            <ul className="navbar-nav">
+              <li className="nav-item" style={{ minWidth: "200px" }}>
+                <select
+                  className="form-control custom-select"
+                  value={selectedSuraNumber || ""}
+                  onChange={handleSuraChange}
+                >
+                  {suraList.map((sura) => (
+                    <option key={sura.number} value={sura.number}>
+                      {sura.name} - {sura.number}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            </ul>
+          )}
+
+          <ul className="navbar-nav ml-md-3 mt-3 mt-md-0">
+            <li className="nav-item dropdown">
+              <a
+                className="nav-link dropdown-toggle"
+                href="#"
+                id="booksDropdown"
+                role="button"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
               >
-                {suraList.map((sura) => (
-                  <option key={sura.number} value={sura.number}>
-                    {sura.name} - {sura.number}
+                {currentBook}
+              </a>
+              <div className="dropdown-menu" aria-labelledby="booksDropdown">
+                <Link className="dropdown-item" href="/1">
+                  Quran
+                </Link>
+                <Link className="dropdown-item" href="/tanakh/GEN%201">
+                  Bible
+                </Link>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        {pathname && pathname.startsWith("/tanakh") && (
+          <div className="w-100 mt-3">
+            <div className="form-group">
+              <label className="small text-muted mb-1">Books</label>
+              <select
+                className="form-control"
+                value={selectedTanakhBook}
+                onChange={handleBookChange}
+              >
+                <option value="">Select a book</option>
+                {bookOptions.map((book) => (
+                  <option key={book} value={book}>
+                    {book}
                   </option>
                 ))}
               </select>
-            </li>
-          </ul>
-        )}
-
-        <ul className="navbar-nav">
-          <li className="nav-item dropdown">
-            <a
-              className="nav-link dropdown-toggle"
-              href="#"
-              id="booksDropdown"
-              role="button"
-              data-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
-              {currentBook}
-            </a>
-            <div className="dropdown-menu" aria-labelledby="booksDropdown">
-              <Link className="dropdown-item" href="/1">
-                Quran
-              </Link>
-              <span className="dropdown-item disabled">Bible</span>
             </div>
-          </li>
-        </ul>
+            <div className="form-group">
+              <label className="small text-muted mb-1">Chapters</label>
+              <select
+                className="form-control"
+                value={selectedTanakhChapter}
+                onChange={handleChapterChange}
+                disabled={!selectedTanakhBook}
+              >
+                <option value="">Select a chapter</option>
+                {chapterOptions.map((ch) => (
+                  <option key={ch} value={ch}>
+                    {ch}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
