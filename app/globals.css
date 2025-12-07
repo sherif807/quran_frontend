@@ -245,6 +245,12 @@ html {
   vertical-align: middle;
 }
 
+.hide-translations .play-hebrew-btn,
+.hide-translations .speech-settings-toggle,
+.hide-translations .speech-settings-panel {
+  display: none !important;
+}
+
 .speech-settings-toggle {
   position: fixed;
   left: 8px;
