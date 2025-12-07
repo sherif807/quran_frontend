@@ -128,37 +128,49 @@ export default async function TanakhPage({ params }) {
               id={`verse-${verseNumber}`}
               data-verse-ref={`${selectedBook} ${selectedChapter}:${verseNumber}`}
             >
-              <span id={`verse-${verseNumber}`} className="hebrew-verse">
-                <span className="verse-number">{verseNumber}</span>{" "}
-                {verseProps.words.map((word, idx) => (
-                  <a
-                    key={`${word.ref}-${idx}`}
-                    className="hebrew-text wordRootTanakh"
-                    data-word-position={word.ref}
-                    href={`/tanakh/word-root/${encodeURIComponent(word.ref)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {word.displayText}{" "}
-                  </a>
-                ))}
-                <span className="hebrew-text sof-pasuq">:</span>
-                <PlayHebrew
-                  text={verseProps.words.map((w) => w.displayText).join(" ")}
-                />
-              </span>
-              <div className="translation-container">
-                {(verseProps.translations || []).map((t, idx) => (
-                  <div
-                    key={idx}
-                    className="translation mb-2"
-                    style={{
-                      direction: t.direction || "ltr",
-                      textAlign: t.direction === "rtl" ? "right" : "left",
-                    }}
-                    dangerouslySetInnerHTML={{ __html: t.translationText }}
+                <span id={`verse-${verseNumber}`} className="hebrew-verse">
+                  <span className="verse-number">{verseNumber}</span>{" "}
+                  {verseProps.words.map((word, idx) => (
+                    <a
+                      key={`${word.ref}-${idx}`}
+                      className="hebrew-text wordRootTanakh"
+                      data-word-position={word.ref}
+                      href={`/tanakh/word-root/${encodeURIComponent(word.ref)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {word.displayText}{" "}
+                    </a>
+                  ))}
+                  <span className="hebrew-text sof-pasuq">:</span>
+                </span>
+                <div className="mt-1">
+                  <PlayHebrew
+                    text={verseProps.words.map((w) => w.displayText).join(" ")}
                   />
-                ))}
+                </div>
+              <div className="translation-container">
+                {[...(verseProps.translations || [])]
+                  .sort((a, b) => {
+                    const dirA = (a.direction || "").toLowerCase();
+                    const dirB = (b.direction || "").toLowerCase();
+                    // English (ltr) first, then rtl
+                    if (dirA === dirB) return 0;
+                    if (dirA === "ltr") return -1;
+                    if (dirB === "ltr") return 1;
+                    return 0;
+                  })
+                  .map((t, idx) => (
+                    <div
+                      key={idx}
+                      className="translation mb-2"
+                      style={{
+                        direction: t.direction || "ltr",
+                        textAlign: t.direction === "rtl" ? "right" : "left",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: t.translationText }}
+                    />
+                  ))}
               </div>
             </div>
           ))}
