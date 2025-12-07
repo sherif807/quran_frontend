@@ -7,8 +7,7 @@ async function fetchRoot(wordPosition) {
   const res = await fetch(
     `${API_BASE}/tanakh/word-root/${encodeURIComponent(wordPosition)}`,
     {
-      // Root searches can benefit from short caching to avoid re-fetch on navigation.
-      next: { revalidate: 300 },
+      cache: "no-store",
     }
   );
   if (!res.ok) {

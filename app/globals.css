@@ -1,7 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap");
-
 body {
-  font-family: "Scheherazade New", "ScheherazadeRW", serif;
+  font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
   background-color: #f8f9fa;
 }
 
@@ -15,7 +13,7 @@ html {
 }
 
 .toHover {
-  font-family: "Scheherazade New", "ScheherazadeRW", sans-serif;
+  font-family: var(--font-scheherazade), "ScheherazadeRW", sans-serif;
   font-size: 185%;
   direction: rtl;
   text-align: right;
@@ -156,7 +154,8 @@ html {
   direction: rtl;
   text-align: right;
   display: block;
-  font-family: "Noto Serif Hebrew", "Times New Roman", serif;
+  font-family: var(--font-hebrew), "Times New Roman", serif;
+  font-weight: 600;
   color: #212529;
 }
 
@@ -164,7 +163,8 @@ html {
   font-size: 140%;
   direction: rtl;
   text-align: right;
-  font-family: "Noto Serif Hebrew", "Times New Roman", serif;
+  font-family: var(--font-hebrew), "Times New Roman", serif;
+  font-weight: 600;
   color: #212529;
 }
 

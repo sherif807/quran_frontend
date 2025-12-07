@@ -3,34 +3,11 @@ import Header from "../../components/Header";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
-export const dynamic = "force-static";
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-  try {
-    const res = await fetch(`${API_BASE}/tanakh/GEN%201`, {
-      next: { revalidate: 86400 },
-    });
-    // Fetch menu from a lightweight call; reuse the chapter fetch to get it.
-    const data = await res.json();
-    const menu = data.menu || {};
-    const params = [];
-    Object.entries(menu).forEach(([book, chapters]) => {
-      chapters.forEach((ch) => {
-        params.push({ ref: `${book}%20${ch}` });
-      });
-    });
-    return params;
-  } catch (e) {
-    // Fallback: only prebuild Genesis 1 if menu fetch fails.
-    return [{ ref: "GEN%201" }];
-  }
-}
+export const revalidate = 0;
 
 async function fetchTanakh(ref) {
   const res = await fetch(`${API_BASE}/tanakh/${encodeURIComponent(ref)}`, {
-    // Cache on the Next.js side; chapters are read-only.
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`Failed to load Tanakh ref ${ref}`);
