@@ -9,13 +9,20 @@ export default function PlayHebrew({ text }) {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     if (!text) return;
 
-    window.speechSynthesis.cancel();
+    // If already speaking, stop; otherwise start from beginning.
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "he-IL";
     utter.rate = 0.95;
     utter.onstart = () => setSpeaking(true);
     utter.onend = () => setSpeaking(false);
     utter.onerror = () => setSpeaking(false);
+    window.speechSynthesis.cancel(); // ensure clean start
     window.speechSynthesis.speak(utter);
   };
 
