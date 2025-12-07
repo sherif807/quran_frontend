@@ -1,6 +1,7 @@
 import Header from "../../../components/Header";
 import TranslationToggle from "../../../components/TranslationToggle";
 import PlayHebrew from "../../../components/PlayHebrew";
+import CopyHebrew from "../../../components/CopyHebrew";
 import VerseTranslations from "../../../components/VerseTranslations";
 
 const API_BASE =
@@ -76,8 +77,11 @@ export default async function TanakhRootPage({ params }) {
                   ))}
                   <span className="hebrew-text sof-pasuq">:</span>
                 </div>
-                <div className="d-flex align-items-center mt-1">
+                <div className="d-flex align-items-start mt-1">
                   <PlayHebrew
+                    text={verseProps.words.map((w) => w.displayText).join(" ")}
+                  />
+                  <CopyHebrew
                     text={verseProps.words.map((w) => w.displayText).join(" ")}
                   />
                   <VerseTranslations translations={verseProps.translations} />
