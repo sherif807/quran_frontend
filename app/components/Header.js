@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 
 export default function Header({ allSuras = {}, selectedSuraNumber }) {
   const router = useRouter();
@@ -29,30 +29,64 @@ export default function Header({ allSuras = {}, selectedSuraNumber }) {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
 
-  return (
-    <nav
-      className="navbar navbar-expand-md navbar-light bg-light mb-3 sticky-top shadow-sm"
-      dir="rtl"
-    >
-      <Link className="navbar-brand" href="/1">
-        Quranalive
-      </Link>
+  const [darkMode, setDarkMode] = useState(false);
 
-      <button
-        className="navbar-toggler"
-        type="button"
-        data-toggle="collapse"
-        data-target="#navbarContent"
-        aria-controls="navbarContent"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span className="navbar-toggler-icon" />
-      </button>
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("dark-mode") === "1";
+    setDarkMode(stored);
+    document.documentElement.classList.toggle("dark-mode", stored);
+  }, []);
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.toggle("dark-mode", next);
+      window.localStorage.setItem("dark-mode", next ? "1" : "0");
+    }
+  };
+
+  return (
+    <nav className="navbar navbar-expand-md navbar-light bg-light mb-3 sticky-top shadow-sm">
+      <div className="d-flex w-100 align-items-center justify-content-between position-relative header-top">
+        <div className="navbar-brand mb-0 pb-0">
+          <Link href="/1" className="text-dark text-decoration-none">
+            Quranalive
+          </Link>
+        </div>
+
+        <div className="header-switch-center">
+          <div className="theme-switch-wrapper">
+            <label className="theme-switch" htmlFor="theme-switch-checkbox">
+              <input
+                type="checkbox"
+                id="theme-switch-checkbox"
+                checked={darkMode}
+                onChange={toggleDarkMode}
+              />
+              <div className="slider round" />
+            </label>
+          </div>
+        </div>
+
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarContent"
+          aria-controls="navbarContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon" />
+        </button>
+      </div>
 
       <div
-        className="collapse navbar-collapse justify-content-between flex-row-reverse"
+        className="collapse navbar-collapse justify-content-between flex-row-reverse align-items-center"
         id="navbarContent"
+        dir="rtl"
       >
         {suraList.length > 0 && (
           <ul className="navbar-nav">

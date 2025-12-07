@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
 function Verse({ verse, selectedSuraNumber }) {
   return (
     <span
-      className="toHover d-inline-block mb-3"
+      className="toHover mb-3"
       id={`verse-${verse.verseNumber}`}
       data-verse-count={verse.count}
       title={verse.count}
@@ -89,6 +89,13 @@ export default async function SuraPage({ params }) {
       />
       <nav aria-label="Page navigation example">
         <ul className="pagination justify-content-center mt-2">
+          {hasPrev && (
+            <li className="page-item">
+              <a className="page-link" href={`/${selectedSura.number - 1}`}>
+                {"<"} {prevSura ? prevSura.name : selectedSura.number - 1}
+              </a>
+            </li>
+          )}
           <li className="page-item disabled">
             <a className="page-link" href="#" tabIndex={-1}>
               {selectedSura.name}
@@ -98,13 +105,6 @@ export default async function SuraPage({ params }) {
             <li className="page-item">
               <a className="page-link" href={`/${selectedSura.number + 1}`}>
                 {nextSura ? nextSura.name : selectedSura.number + 1} {">"}
-              </a>
-            </li>
-          )}
-          {hasPrev && (
-            <li className="page-item">
-              <a className="page-link" href={`/${selectedSura.number - 1}`}>
-                {prevSura ? prevSura.name : selectedSura.number - 1} {"<"}
               </a>
             </li>
           )}
@@ -137,6 +137,13 @@ export default async function SuraPage({ params }) {
 
       <nav aria-label="Page navigation example">
         <ul className="pagination justify-content-center mt-3">
+          {hasPrev && (
+            <li className="page-item">
+              <a className="page-link" href={`/${selectedSura.number - 1}`}>
+                {"<"} {prevSura ? prevSura.name : selectedSura.number - 1}
+              </a>
+            </li>
+          )}
           <li className="page-item disabled">
             <a className="page-link" href="#" tabIndex={-1}>
               {selectedSura.name}
@@ -146,13 +153,6 @@ export default async function SuraPage({ params }) {
             <li className="page-item">
               <a className="page-link" href={`/${selectedSura.number + 1}`}>
                 {nextSura ? nextSura.name : selectedSura.number + 1} {">"}
-              </a>
-            </li>
-          )}
-          {hasPrev && (
-            <li className="page-item">
-              <a className="page-link" href={`/${selectedSura.number - 1}`}>
-                {prevSura ? prevSura.name : selectedSura.number - 1} {"<"}
               </a>
             </li>
           )}
