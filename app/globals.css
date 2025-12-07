@@ -164,7 +164,7 @@ html {
   direction: rtl;
   text-align: right;
   display: block;
-  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif;
+  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif !important;
   font-weight: 400;
   color: #212529;
 }
@@ -173,7 +173,7 @@ html {
   font-size: 140%;
   direction: rtl;
   text-align: right;
-  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif;
+  font-family: "TorahSofer", var(--font-hebrew), "Times New Roman", serif !important;
   font-weight: 400;
   color: #212529;
 }
