@@ -3,7 +3,8 @@ const API_BASE =
 
 async function fetchSuraData(suraId) {
   const res = await fetch(`${API_BASE}/quran/${suraId}`, {
-    cache: "no-store",
+    // Cache on the Next.js side to reduce repeated API calls for read-only data.
+    next: { revalidate: 60 },
   });
   if (!res.ok) {
     throw new Error(`Failed to load sura ${suraId}`);

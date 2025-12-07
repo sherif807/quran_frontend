@@ -5,7 +5,8 @@ const API_BASE =
 
 async function fetchTanakh(ref) {
   const res = await fetch(`${API_BASE}/tanakh/${encodeURIComponent(ref)}`, {
-    cache: "no-store",
+    // Cache on the Next.js side; chapters are read-only.
+    next: { revalidate: 60 },
   });
   if (!res.ok) {
     throw new Error(`Failed to load Tanakh ref ${ref}`);

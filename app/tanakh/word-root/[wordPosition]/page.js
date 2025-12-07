@@ -6,7 +6,10 @@ const API_BASE =
 async function fetchRoot(wordPosition) {
   const res = await fetch(
     `${API_BASE}/tanakh/word-root/${encodeURIComponent(wordPosition)}`,
-    { cache: "no-store" }
+    {
+      // Root searches can benefit from short caching to avoid re-fetch on navigation.
+      next: { revalidate: 300 },
+    }
   );
   if (!res.ok) {
     throw new Error(`Failed to load root for ${wordPosition}`);
