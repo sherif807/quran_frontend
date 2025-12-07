@@ -26,7 +26,11 @@ export default function PlayHebrew({ text }) {
       onClick={speak}
       aria-label="Play verse audio"
     >
-      {speaking ? "⏹" : "▶"}
+      {speaking ? (
+        <i className="bi bi-pause-fill" />
+      ) : (
+        <i className="bi bi-play-fill" />
+      )}
     </button>
   );
 }

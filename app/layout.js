@@ -1,6 +1,7 @@
 import "./globals.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Noto_Serif_Hebrew } from "next/font/google";
 
 const scheherazade = localFont({

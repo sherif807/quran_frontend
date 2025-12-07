@@ -140,10 +140,10 @@ export default async function TanakhPage({ params }) {
                     {word.displayText}{" "}
                   </a>
                 ))}
+                <span className="hebrew-text sof-pasuq">:</span>
                 <PlayHebrew
                   text={verseProps.words.map((w) => w.displayText).join(" ")}
                 />
-                <span className="hebrew-text sof-pasuq">:</span>
               </span>
               <div className="translation-container">
                 {(verseProps.translations || []).map((t, idx) => (
