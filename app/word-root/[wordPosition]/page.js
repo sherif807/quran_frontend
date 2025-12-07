@@ -47,25 +47,26 @@ export default async function WordRootPage({ params }) {
                 : verse.verseNumber}
             </a>
             <div className="card-body toHover" style={{ backgroundColor: "#f7f2d1" }}>
-              {verse.words.map((word) => {
-                if (!word.conversion || !word.conversion.lettersArray.length) {
-                  return null;
-                }
-                const highlighted =
-                  word.highlightWordNumber &&
-                  word.highlightWordNumber === word.position;
-                return (
-                  <span key={word.position} className="word-wrapper">
-                    <span
-                      className={`wordRoot ${highlighted ? "text-info" : ""}`}
-                    >
-                      {word.conversion.lettersArray.map((letter, idx) => (
-                        <span key={idx}>{letter.unicode}</span>
-                      ))}
-                    </span>{" "}
-                  </span>
-                );
-              })}
+            {verse.words.map((word) => {
+              if (!word.conversion || !word.conversion.lettersArray.length) {
+                return null;
+              }
+              const arabicWord = word.conversion.lettersArray
+                .map((letter) => letter.unicode)
+                .join("");
+              const highlighted =
+                word.highlightWordNumber &&
+                word.highlightWordNumber === word.position;
+              return (
+                <span key={word.position} className="word-wrapper">
+                  <span
+                    className={`wordRoot ${highlighted ? "text-info" : ""}`}
+                  >
+                    {arabicWord}
+                  </span>{" "}
+                </span>
+              );
+            })}
             </div>
           </div>
         );
