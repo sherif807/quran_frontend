@@ -155,7 +155,7 @@ html {
   text-align: right;
   display: block;
   font-family: var(--font-hebrew), "Times New Roman", serif;
-  font-weight: 400;
+  font-weight: 700;
   color: #212529;
 }
 
@@ -164,7 +164,7 @@ html {
   direction: rtl;
   text-align: right;
   font-family: var(--font-hebrew), "Times New Roman", serif;
-  font-weight: 400;
+  font-weight: 700;
   color: #212529;
 }
 
