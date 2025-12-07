@@ -140,6 +140,11 @@ html {
   color: #17a2b8;
 }
 
+.translation {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
 #progress-indicator {
   position: fixed;
   right: 0;
