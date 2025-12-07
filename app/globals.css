@@ -1,0 +1,137 @@
+@import url("https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap");
+
+body {
+  font-family: "Scheherazade New", "ScheherazadeRW", serif;
+  background-color: #f8f9fa;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.toHover {
+  font-family: "Scheherazade New", "ScheherazadeRW", sans-serif;
+  font-size: 185%;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.7em;
+  position: relative;
+}
+
+.verseLetterCount {
+  font-size: 8px;
+  position: absolute;
+  right: 0%;
+  top: 10%;
+  transform: translateX(-50%);
+  display: none !important;
+}
+
+.gematriaWordVerseAddition {
+  font-size: 8px;
+  position: absolute;
+  left: 2%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  display: none !important;
+}
+
+.wordRoot {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 0.05em;
+}
+
+.word-wrapper {
+  display: inline;
+}
+
+.wordRoot:hover {
+  text-decoration: none;
+}
+
+.wordLetterCount {
+  font-size: 8px;
+  position: absolute;
+  left: 50%;
+  bottom: 4.5em;
+  transform: translateX(-50%);
+  display: none !important;
+}
+
+.gematriaLetters {
+  font-size: 8px;
+  position: absolute;
+  left: 50%;
+  top: 6.5em;
+  transform: translateX(-50%);
+  display: none !important;
+}
+
+.gematriaWordAddition {
+  font-size: 8px;
+  position: absolute;
+  left: 50%;
+  top: 8.5em;
+  transform: translateX(-50%);
+  display: none !important;
+}
+
+.addMoreSpace {
+  line-height: 5em;
+  border-top: 2px solid black;
+  border-bottom: 2px solid black;
+  display: block;
+}
+
+.house {
+}
+
+.lettersAboveHouse {
+  position: relative;
+  top: -20px;
+  right: -20px;
+}
+
+.verseNotes {
+  font-size: 12px;
+  display: none;
+}
+
+.dark-mode {
+  min-height: 100vh;
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.dark-mode img {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.wordRoot.text-info {
+  color: #17a2b8 !important;
+}
+
+.toHover:target {
+  transition: color 0.8s ease;
+}
+
+.toHover:target .wordRoot {
+  color: #17a2b8 !important; /* match root highlight color */
+  transition: color 0.8s ease;
+}
+
+#progress-indicator {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 5px;
+  background-color: #dcdfe1;
+  z-index: 1000;
+}
