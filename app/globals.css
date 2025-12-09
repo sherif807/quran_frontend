@@ -401,3 +401,7 @@ input:checked + .slider:before {
 .header-dropdown .btn {
   text-align: left;
 }
+
+.copy-chapter-btn {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}

@@ -2,6 +2,7 @@ import Header from "../../components/Header";
 import PlayHebrew from "../../components/PlayHebrew";
 import CopyHebrew from "../../components/CopyHebrew";
 import VerseTranslations from "../../components/VerseTranslations";
+import CopyChapterHebrew from "../../components/CopyChapterHebrew";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -45,6 +46,14 @@ export default async function TanakhPage({ params }) {
 
   const hasPrevChapter = selectedChapter > 1;
   const hasNextChapter = selectedChapter < selectedBookChapterCount;
+
+  const chapterHebrewText = Object.entries(verseArray || {})
+    .map(([_, verseProps]) => {
+      const verseWords = (verseProps.words || []).map((w) => w.displayText || "").join(" ");
+      return verseWords.trim();
+    })
+    .filter(Boolean)
+    .join("\n");
 
   return (
     <>
@@ -204,6 +213,10 @@ export default async function TanakhPage({ params }) {
           ) : null}
         </ul>
       </nav>
+
+      <div className="text-right mt-3 mb-3">
+        <CopyChapterHebrew text={chapterHebrewText} />
+      </div>
     </>
   );
 }
