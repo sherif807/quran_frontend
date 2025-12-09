@@ -45,6 +45,7 @@ html {
   text-decoration: none;
   display: inline;
   margin: 0 0.1em;
+  font-weight: 700;
 }
 
 .word-wrapper {
@@ -53,6 +54,10 @@ html {
 
 .wordRoot:hover {
   text-decoration: none;
+}
+
+.wordRoot .house {
+  font-weight: 700;
 }
 
 .wordLetterCount {
@@ -173,6 +178,15 @@ html {
   color: #212529;
 }
 
+.quran-verse {
+  font-size: 140%;
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
+  font-weight: 700;
+  color: #212529;
+}
+
 .wordRootTanakh {
   cursor: pointer;
   color: #212529;
@@ -204,6 +218,11 @@ html {
 .tanakh-verse-card .hebrew-verse,
 .tanakh-verse-card .hebrew-text {
   white-space: normal;
+}
+
+.show-quran-metrics .verseLetterCount,
+.show-quran-metrics .gematriaWordVerseAddition {
+  display: inline-block !important;
 }
 
 .hide-translations .translation-container:not(.per-verse-open) {

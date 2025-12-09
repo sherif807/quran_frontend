@@ -32,26 +32,19 @@ export async function generateMetadata({ params }) {
 
 function Verse({ verse, selectedSuraNumber }) {
   return (
-    <span
-      className="toHover mb-3"
-      id={`verse-${verse.verseNumber}`}
-      data-verse-count={verse.count}
-      title={verse.count}
-    >
-      <span className="badge badge-pill badge-dark verseLetterCount">
-        {verse.count}
-      </span>
-      <span className="badge badge-dark gematriaWordVerseAddition">
-        {verse.gematriaWordVerseAddition}
-      </span>
+    <span className="toHover mb-3" id={`verse-${verse.verseNumber}`}>
       {verse.words.map((word) => {
-        if (!word.conversion || !word.conversion.lettersArray.length) {
+        const wordText =
+          (word.conversion &&
+            word.conversion.lettersArray &&
+            word.conversion.lettersArray.map((letter) => letter.unicode).join("")) ||
+          (word.conversion && word.conversion.arabicScript) ||
+          word.displayText;
+
+        if (!wordText) {
           return null;
         }
         const wordPosition = `${selectedSuraNumber}:${verse.verseNumber}:${word.position}`;
-        const arabicWord = word.conversion.lettersArray
-          .map((letter) => letter.unicode)
-          .join("");
         return (
           <span key={word.position} className="word-wrapper">
             <a
@@ -61,7 +54,7 @@ function Verse({ verse, selectedSuraNumber }) {
               target="_blank"
               rel="noreferrer"
             >
-              <span className="house">{arabicWord}</span>
+              <span className="house">{wordText}</span>
             </a>{" "}
           </span>
         );
@@ -89,6 +82,7 @@ export default async function SuraPage({ params }) {
       <Header
         allSuras={allSuras}
         selectedSuraNumber={selectedSura.number}
+        quranView="classic"
       />
       <nav aria-label="Page navigation example">
         <ul className="pagination justify-content-center mt-2">
@@ -121,17 +115,17 @@ export default async function SuraPage({ params }) {
           {selectedSura.revelationPlace === 0 ? "مكية" : "مدنية"}{" "}
           {selectedSura.revelationOrder}
         </div>
-        <div
-          className="card-body"
-          id="quranCard"
-          style={{ backgroundColor: "#f7f2d1" }}
-        >
-          <p className="card-text">
-            {versesArray.map((verse) => (
-              <Verse
-                key={verse.id}
-                verse={verse}
-                selectedSuraNumber={selectedSura.number}
+      <div
+        className="card-body"
+        id="quranCard"
+        style={{ backgroundColor: "#f7f2d1" }}
+      >
+        <p className="card-text quran-verse">
+          {versesArray.map((verse) => (
+            <Verse
+              key={verse.id}
+              verse={verse}
+              selectedSuraNumber={selectedSura.number}
               />
             ))}
           </p>

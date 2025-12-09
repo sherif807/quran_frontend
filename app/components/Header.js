@@ -12,6 +12,7 @@ export default function Header({
   selectedBook,
   selectedChapter,
   showTranslationToggle = false,
+  quranView = "classic",
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -168,6 +169,26 @@ export default function Header({
                   ))}
                 </div>
               </div>
+              <div className="mt-2">
+                <div className="btn-group btn-group-sm w-100" role="group" aria-label="Quran view">
+                  <Link
+                    className={`btn ${
+                      quranView === "classic" ? "btn-primary" : "btn-outline-secondary"
+                    }`}
+                    href={`/${selectedSuraNumber || 1}`}
+                  >
+                    عرض عادي
+                  </Link>
+                  <Link
+                    className={`btn ${
+                      quranView === "verse" ? "btn-primary" : "btn-outline-secondary"
+                    }`}
+                    href={`/verses/${selectedSuraNumber || 1}`}
+                  >
+                    عرض الآيات
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 
@@ -177,7 +198,7 @@ export default function Header({
                 className={`btn btn-sm ${
                   currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
                 }`}
-                href="/1"
+                href={quranView === "verse" ? "/verses/1" : "/1"}
               >
                 Quran
               </Link>
