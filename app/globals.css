@@ -45,7 +45,7 @@ html {
   text-decoration: none;
   display: inline;
   margin: 0 0.1em;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .word-wrapper {
@@ -58,7 +58,7 @@ html {
 }
 
 .wordRoot .house {
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .wordLetterCount {
@@ -184,7 +184,7 @@ html {
   direction: rtl;
   text-align: right;
   font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
-  font-weight: 700;
+  font-weight: 800;
   color: #212529;
 }
 
