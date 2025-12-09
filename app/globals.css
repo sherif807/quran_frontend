@@ -179,7 +179,7 @@ html {
 }
 
 .quran-verse {
-  font-size: 140%;
+  font-size: 130%;
   direction: rtl;
   text-align: right;
   font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
