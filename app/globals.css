@@ -54,6 +54,7 @@ html {
 
 .wordRoot:hover {
   text-decoration: none;
+  color: inherit;
 }
 
 .wordRoot .house {
@@ -179,7 +180,7 @@ html {
 }
 
 .quran-verse {
-  font-size: 130%;
+  font-size: 122%;
   direction: rtl;
   text-align: right;
   font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
