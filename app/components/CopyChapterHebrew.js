@@ -30,7 +30,7 @@ export default function CopyChapterHebrew({ text = "" }) {
   return (
     <button
       type="button"
-      className="btn btn-primary btn-sm copy-chapter-btn"
+      className="btn btn-outline-secondary btn-sm copy-chapter-btn"
       onClick={copy}
       aria-label="Copy entire chapter (Hebrew)"
       title={copied ? "Copied!" : "Copy chapter"}
