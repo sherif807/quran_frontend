@@ -4,7 +4,7 @@ const API_BASE =
 export const revalidate = 0;
 
 async function fetchSuraData(suraId) {
-  const res = await fetch(`${API_BASE}/quran/${suraId}`, {
+  const res = await fetch(`${API_BASE}/quran/${suraId}?mode=light`, {
     // Cache on the Next.js side to reduce repeated API calls for read-only data.
     // Avoid storing oversized responses (>2MB) by skipping Next cache here.
     cache: "no-store",
@@ -33,8 +33,9 @@ export async function generateMetadata({ params }) {
 function Verse({ verse, selectedSuraNumber }) {
   return (
     <span className="toHover mb-3" id={`verse-${verse.verseNumber}`}>
-      {verse.words.map((word) => {
+      {verse.words.map((word, idx) => {
         const wordText =
+          word.wordText ||
           (word.conversion &&
             word.conversion.lettersArray &&
             word.conversion.lettersArray.map((letter) => letter.unicode).join("")) ||
@@ -46,7 +47,7 @@ function Verse({ verse, selectedSuraNumber }) {
         }
         const wordPosition = `${selectedSuraNumber}:${verse.verseNumber}:${word.position}`;
         return (
-          <span key={word.position} className="word-wrapper">
+          <span key={`${word.position}-${idx}`} className="word-wrapper">
             <a
               className="wordRoot"
               data-word-position={wordPosition}

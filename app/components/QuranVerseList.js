@@ -23,7 +23,7 @@ function VerseCard({ verse, selectedSuraNumber, showMetrics }) {
           <span className="badge badge-dark gematriaWordVerseAddition">
             {verse.gematriaWordVerseAddition}
           </span>
-          {verse.words.map((word) => {
+          {verse.words.map((word, idx) => {
             if (!word.conversion || !word.conversion.lettersArray.length) {
               return null;
             }
@@ -32,7 +32,7 @@ function VerseCard({ verse, selectedSuraNumber, showMetrics }) {
               .map((letter) => letter.unicode)
               .join("");
             return (
-              <span key={word.position} className="word-wrapper">
+              <span key={`${word.position}-${idx}`} className="word-wrapper">
                 <a
                   className="wordRoot"
                   data-word-position={wordPosition}
