@@ -250,6 +250,10 @@ html {
   padding: 16px;
 }
 
+.dark-mode .strongs-modal-backdrop {
+  background: rgba(255, 255, 255, 0.6);
+}
+
 .strongs-modal {
   max-width: 520px;
   width: 100%;
