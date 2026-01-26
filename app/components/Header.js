@@ -215,7 +215,7 @@ export default function Header({
                 }`}
                 href="/tanakh/GEN%201"
               >
-                Bible
+                Tanakh
               </Link>
               <Link
                 className={`btn btn-sm ${
