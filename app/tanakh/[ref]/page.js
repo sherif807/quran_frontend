@@ -1,10 +1,8 @@
 import Header from "../../components/Header";
-import PlayHebrew from "../../components/PlayHebrew";
-import CopyHebrew from "../../components/CopyHebrew";
-import VerseTranslations from "../../components/VerseTranslations";
 import CopyChapterHebrew from "../../components/CopyChapterHebrew";
 import TanakhProgress from "../../components/TanakhProgress";
 import SpeechSettings from "../../components/SpeechSettings";
+import TanakhVerseList from "../../components/TanakhVerseList";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -128,41 +126,11 @@ export default async function TanakhPage({ params }) {
           className="card-body"
           style={{ backgroundColor: "#f7f2d1" }}
         >
-          {Object.entries(verseArray || {}).map(([verseNumber, verseProps]) => (
-            <div
-              key={verseNumber}
-              className="verse-container mb-2"
-              style={{ direction: "rtl" }}
-              id={`verse-${verseNumber}`}
-              data-verse-ref={`${selectedBook} ${selectedChapter}:${verseNumber}`}
-            >
-              <span id={`verse-${verseNumber}`} className="hebrew-verse">
-                <span className="verse-number">{verseNumber}</span>{" "}
-                {verseProps.words.map((word, idx) => (
-                  <a
-                    key={`${word.ref}-${idx}`}
-                    className="hebrew-text wordRootTanakh"
-                    data-word-position={word.ref}
-                    href={`/tanakh/word-root/${encodeURIComponent(word.ref)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {word.displayText}{" "}
-                  </a>
-                ))}
-                <span className="hebrew-text sof-pasuq">:</span>
-              </span>
-              <div className="d-flex align-items-start mt-2">
-                <PlayHebrew
-                  text={verseProps.words.map((w) => w.displayText).join(" ")}
-                />
-                <CopyHebrew
-                  text={verseProps.words.map((w) => w.displayText).join(" ")}
-                />
-                <VerseTranslations translations={verseProps.translations} />
-              </div>
-            </div>
-          ))}
+          <TanakhVerseList
+            verseArray={verseArray}
+            selectedBook={selectedBook}
+            selectedChapter={selectedChapter}
+          />
         </div>
       </div>
 

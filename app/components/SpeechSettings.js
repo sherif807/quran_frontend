@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
-const STORAGE_KEY = "hebrew_tts_settings";
+const DEFAULT_STORAGE_KEY = "hebrew_tts_settings";
 
 const defaultSettings = {
   provider: "browser",
@@ -16,10 +15,10 @@ const defaultSettings = {
   pitch: 0.0,
 };
 
-function readSettings() {
+function readSettings(storageKey) {
   if (typeof window === "undefined") return { ...defaultSettings };
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return { ...defaultSettings };
     const parsed = JSON.parse(raw);
     return { ...defaultSettings, ...parsed };
@@ -28,33 +27,40 @@ function readSettings() {
   }
 }
 
-function persistSettings(settings) {
+function persistSettings(storageKey, settings) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  window.localStorage.setItem(storageKey, JSON.stringify(settings));
 }
 
-export default function SpeechSettings({ inline = false }) {
+export default function SpeechSettings({
+  inline = false,
+  storageKey = DEFAULT_STORAGE_KEY,
+  title = "Speech settings",
+  defaultLanguage = "he-IL",
+  defaultPreviewText = "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ",
+}) {
   const [open, setOpen] = useState(inline);
-  const [settings, setSettings] = useState(defaultSettings);
+  const [settings, setSettings] = useState({
+    ...defaultSettings,
+    language: defaultLanguage,
+  });
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [voices, setVoices] = useState([]);
   const [loadingVoices, setLoadingVoices] = useState(false);
   const [voiceError, setVoiceError] = useState("");
-  const [previewText, setPreviewText] = useState(
-    "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ"
-  );
+  const [previewText, setPreviewText] = useState(defaultPreviewText);
   const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
-    setSettings(readSettings());
+    setSettings(readSettings(storageKey));
     setLoaded(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!loaded) return;
-    persistSettings(settings);
-  }, [settings, loaded]);
+    persistSettings(storageKey, settings);
+  }, [settings, loaded, storageKey]);
 
   const loadVoices = async () => {
     setLoadingVoices(true);
@@ -62,7 +68,7 @@ export default function SpeechSettings({ inline = false }) {
     try {
       const res = await fetch(
         `${API_BASE}/tts/voices?language=${encodeURIComponent(
-          settings.language || "he-IL"
+          settings.language || defaultLanguage
         )}`,
         { cache: "no-store" }
       );
@@ -99,7 +105,7 @@ export default function SpeechSettings({ inline = false }) {
     if (settings.provider === "browser") {
       if (typeof window === "undefined" || !window.speechSynthesis) return;
       const utter = new SpeechSynthesisUtterance(previewText);
-      utter.lang = settings.language || "he-IL";
+      utter.lang = settings.language || defaultLanguage;
       utter.rate = Number(settings.rate) || 1.0;
       utter.pitch = Number(settings.pitch) || 0.0;
       window.speechSynthesis.cancel();
@@ -115,7 +121,7 @@ export default function SpeechSettings({ inline = false }) {
         body: JSON.stringify({
           text: previewText,
           voice: settings.voice || "",
-          language: settings.language || "he-IL",
+          language: settings.language || defaultLanguage,
           rate: Number(settings.rate) || 1.0,
           pitch: Number(settings.pitch) || 0.0,
         }),
@@ -156,7 +162,7 @@ export default function SpeechSettings({ inline = false }) {
         >
           <div className={inline ? "p-3" : "card-body p-3"}>
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <strong>Speech settings</strong>
+              <strong>{title}</strong>
               {!inline && (
                 <button
                   type="button"
@@ -288,7 +294,7 @@ export default function SpeechSettings({ inline = false }) {
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
                 placeholder="Hebrew text to preview"
-                dir="rtl"
+                dir={defaultLanguage.startsWith("he") ? "rtl" : "ltr"}
               />
               <button
                 type="button"
@@ -305,19 +311,13 @@ export default function SpeechSettings({ inline = false }) {
                 type="button"
                 className="btn btn-sm btn-success"
                 onClick={() => {
-                  persistSettings(settings);
+                  persistSettings(storageKey, settings);
                   setSaved(true);
                   setTimeout(() => setSaved(false), 1200);
                 }}
               >
                 {saved ? "Saved" : "Save"}
               </button>
-              <Link
-                className="btn btn-sm btn-outline-secondary ml-2"
-                href="/tanakh/GEN%201"
-              >
-                Save &amp; Back
-              </Link>
             </div>
           </div>
         </div>

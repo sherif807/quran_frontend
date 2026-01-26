@@ -179,6 +179,24 @@ html {
   color: #212529;
 }
 
+.nt-verse {
+  font-size: 130%;
+  direction: ltr;
+  text-align: left;
+  font-family: "Times New Roman", serif;
+  font-weight: 500;
+  color: #212529;
+}
+
+.nt-text {
+  font-size: 130%;
+  direction: ltr;
+  text-align: left;
+  font-family: "Times New Roman", serif;
+  font-weight: 500;
+  color: #212529;
+}
+
 .quran-verse {
   font-size: 122%;
   direction: rtl;
@@ -219,6 +237,53 @@ html {
 .tanakh-verse-card .hebrew-verse,
 .tanakh-verse-card .hebrew-text {
   white-space: normal;
+}
+
+.strongs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.strongs-modal {
+  max-width: 520px;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(6px);
+}
+
+.strongs-lemma {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.nt-progress {
+  position: fixed;
+  right: 12px;
+  bottom: 16px;
+  z-index: 1200;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #212529;
+  border: 1px solid #dcdfe1;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.nt-progress.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .show-quran-metrics .verseLetterCount,

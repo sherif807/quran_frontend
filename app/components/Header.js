@@ -29,7 +29,14 @@ export default function Header({
   }, [suraList, selectedSuraNumber]);
 
   const currentBook =
-    pathname && pathname.startsWith("/tanakh") ? "Bible" : "Quran";
+    pathname && pathname.startsWith("/tanakh")
+      ? "Bible"
+      : pathname && pathname.startsWith("/nt")
+      ? "NT"
+      : "Quran";
+  const isNt = pathname && pathname.startsWith("/nt");
+  const isTanakh = pathname && pathname.startsWith("/tanakh");
+  const readerBasePath = isNt ? "/nt" : "/tanakh";
 
   const handleSuraChange = (e) => {
     const value = e.target.value;
@@ -83,7 +90,7 @@ export default function Header({
       tanakhMenu[book] && tanakhMenu[book].length ? tanakhMenu[book][0] : "";
     setSelectedTanakhChapter(firstChapter);
     if (book && firstChapter) {
-      router.push(`/tanakh/${book}%20${firstChapter}`);
+      router.push(`${readerBasePath}/${book}%20${firstChapter}`);
     }
   };
 
@@ -91,7 +98,7 @@ export default function Header({
     const chapter = e.target.value;
     setSelectedTanakhChapter(chapter);
     if (selectedTanakhBook && chapter) {
-      router.push(`/tanakh/${selectedTanakhBook}%20${chapter}`);
+      router.push(`${readerBasePath}/${selectedTanakhBook}%20${chapter}`);
     }
   };
 
@@ -210,6 +217,14 @@ export default function Header({
               >
                 Bible
               </Link>
+              <Link
+                className={`btn btn-sm ${
+                  currentBook === "NT" ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                href="/nt/MT%201"
+              >
+                NT
+              </Link>
             </div>
           </div>
         </div>
@@ -220,7 +235,7 @@ export default function Header({
           </Link>
         </div>
 
-        {pathname && pathname.startsWith("/tanakh") && (
+        {(isTanakh || isNt) ? (
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
             {showTranslationToggle && (
               <div className="form-group d-flex align-items-center justify-content-between mb-3">
@@ -311,7 +326,7 @@ export default function Header({
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </nav>
   );

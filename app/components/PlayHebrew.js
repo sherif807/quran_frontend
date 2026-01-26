@@ -5,9 +5,9 @@ import { useRef, useState } from "react";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
-const STORAGE_KEY = "hebrew_tts_settings";
+const DEFAULT_STORAGE_KEY = "hebrew_tts_settings";
 
-const readSettings = () => {
+const readSettings = (storageKey) => {
   if (typeof window === "undefined") {
     return {
       provider: "browser",
@@ -18,7 +18,7 @@ const readSettings = () => {
     };
   }
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return { provider: "browser", voice: "", language: "he-IL", rate: 1.0, pitch: 0.0 };
     const parsed = JSON.parse(raw);
     return {
@@ -34,7 +34,11 @@ const readSettings = () => {
   }
 };
 
-export default function PlayHebrew({ text }) {
+export default function PlayHebrew({
+  text,
+  storageKey = DEFAULT_STORAGE_KEY,
+  defaultLanguage = "he-IL",
+}) {
   const [speaking, setSpeaking] = useState(false);
   const audioRef = useRef(null);
 
@@ -48,16 +52,18 @@ export default function PlayHebrew({ text }) {
 
   const speakBrowser = () => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
-    const settings = readSettings();
+    const settings = readSettings(storageKey);
     const rate = Number(settings.rate) || 0.85;
     const pitch = Number(settings.pitch) || 0.95;
     const voices = window.speechSynthesis.getVoices() || [];
     const chosenVoice =
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("he")) ||
+      voices.find((v) =>
+        v.lang && v.lang.toLowerCase().startsWith(defaultLanguage.slice(0, 2))
+      ) ||
       null;
 
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = settings.language || "he-IL";
+    utter.lang = settings.language || defaultLanguage;
     utter.rate = rate;
     utter.pitch = pitch;
     if (chosenVoice) {
@@ -71,11 +77,11 @@ export default function PlayHebrew({ text }) {
   };
 
   const speakGoogle = async () => {
-    const settings = readSettings();
+    const settings = readSettings(storageKey);
     const payload = {
       text,
       voice: settings.voice || "",
-      language: settings.language || "he-IL",
+      language: settings.language || defaultLanguage,
       rate: Number(settings.rate) || 1.0,
       pitch: Number(settings.pitch) || 0.0,
     };
@@ -119,7 +125,7 @@ export default function PlayHebrew({ text }) {
       return;
     }
 
-    const settings = readSettings();
+    const settings = readSettings(storageKey);
     if (String(settings.provider || "browser") === "google") {
       speakGoogle();
     } else {
