@@ -53,7 +53,16 @@ export default function SpeechSettings({
   const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
-    setSettings(readSettings(storageKey));
+    const raw = typeof window === "undefined" ? null : window.localStorage.getItem(storageKey);
+    if (!raw) {
+      setSettings({ ...defaultSettings, language: defaultLanguage });
+    } else {
+      const stored = readSettings(storageKey);
+      setSettings({
+        ...stored,
+        language: stored.language || defaultLanguage,
+      });
+    }
     setLoaded(true);
   }, [storageKey]);
 
@@ -68,7 +77,7 @@ export default function SpeechSettings({
     try {
       const res = await fetch(
         `${API_BASE}/tts/voices?language=${encodeURIComponent(
-          settings.language || defaultLanguage
+          defaultLanguage
         )}`,
         { cache: "no-store" }
       );
@@ -98,14 +107,14 @@ export default function SpeechSettings({
     if (settings.provider !== "google") return;
     if (voices.length > 0) return;
     loadVoices();
-  }, [settings.provider, settings.language]);
+  }, [settings.provider, defaultLanguage]);
 
   const preview = async () => {
     if (!previewText) return;
     if (settings.provider === "browser") {
       if (typeof window === "undefined" || !window.speechSynthesis) return;
       const utter = new SpeechSynthesisUtterance(previewText);
-      utter.lang = settings.language || defaultLanguage;
+      utter.lang = defaultLanguage;
       utter.rate = Number(settings.rate) || 1.0;
       utter.pitch = Number(settings.pitch) || 0.0;
       window.speechSynthesis.cancel();
@@ -121,7 +130,7 @@ export default function SpeechSettings({
         body: JSON.stringify({
           text: previewText,
           voice: settings.voice || "",
-          language: settings.language || defaultLanguage,
+          language: defaultLanguage,
           rate: Number(settings.rate) || 1.0,
           pitch: Number(settings.pitch) || 0.0,
         }),
@@ -190,28 +199,12 @@ export default function SpeechSettings({
                 <option value="google">Google</option>
               </select>
               <small className="text-muted d-block mt-1">
-                Browser uses your device voice. Google gives higher quality Hebrew voices.
+                Browser uses your device voice. Google gives higher quality voices.
               </small>
             </div>
 
             {settings.provider === "google" && (
               <>
-                <div className="form-group mb-2">
-                  <label className="small text-muted mb-1">Language</label>
-                  <select
-                    className="form-control form-control-sm"
-                    value={settings.language}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        language: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="he-IL">Hebrew (Israel) - he-IL</option>
-                  </select>
-                </div>
-
                 <div className="form-group mb-2">
                   <label className="small text-muted mb-1">Google voice</label>
                   <div className="d-flex">
