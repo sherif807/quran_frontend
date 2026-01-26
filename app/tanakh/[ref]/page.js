@@ -3,6 +3,8 @@ import PlayHebrew from "../../components/PlayHebrew";
 import CopyHebrew from "../../components/CopyHebrew";
 import VerseTranslations from "../../components/VerseTranslations";
 import CopyChapterHebrew from "../../components/CopyChapterHebrew";
+import TanakhProgress from "../../components/TanakhProgress";
+import SpeechSettings from "../../components/SpeechSettings";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -217,6 +219,9 @@ export default async function TanakhPage({ params }) {
       <div className="text-right mt-3 mb-3">
         <CopyChapterHebrew text={chapterHebrewText} />
       </div>
+
+      <TanakhProgress totalVerses={Object.keys(verseArray || {}).length} />
+      <SpeechSettings />
     </>
   );
 }

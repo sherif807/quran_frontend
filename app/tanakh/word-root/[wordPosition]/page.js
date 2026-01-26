@@ -2,6 +2,7 @@ import Header from "../../../components/Header";
 import PlayHebrew from "../../../components/PlayHebrew";
 import CopyHebrew from "../../../components/CopyHebrew";
 import VerseTranslations from "../../../components/VerseTranslations";
+import SpeechSettings from "../../../components/SpeechSettings";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -88,6 +89,7 @@ export default async function TanakhRootPage({ params }) {
           ))
         )
       )}
+      <SpeechSettings />
     </div>
   );
 }

@@ -214,6 +214,12 @@ export default function Header({
           </div>
         </div>
 
+        <div className="mt-3 mt-md-0">
+          <Link className="btn btn-sm btn-outline-secondary w-100" href="/settings">
+            Settings
+          </Link>
+        </div>
+
         {pathname && pathname.startsWith("/tanakh") && (
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
             {showTranslationToggle && (
