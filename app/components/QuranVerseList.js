@@ -1,28 +1,15 @@
 "use client";
 
-import { useState } from "react";
-
-function VerseCard({ verse, selectedSuraNumber, showMetrics }) {
+function VerseCard({ verse, selectedSuraNumber }) {
   return (
-    <div
-      className={`card rtl tanakh-verse-card mb-3 ${
-        showMetrics ? "show-quran-metrics" : ""
-      }`}
-    >
+    <div className="card rtl tanakh-verse-card mb-3">
       <div className="card-header d-flex justify-content-between align-items-center">
         <span>
           {selectedSuraNumber} : {verse.verseNumber}
         </span>
-        <span className="small text-muted">{verse.count} حرف</span>
       </div>
       <div className="card-body" style={{ backgroundColor: "#f7f2d1" }}>
         <div className="quran-verse toHover" id={`verse-${verse.verseNumber}`}>
-          <span className="badge badge-pill badge-dark verseLetterCount">
-            {verse.count}
-          </span>
-          <span className="badge badge-dark gematriaWordVerseAddition">
-            {verse.gematriaWordVerseAddition}
-          </span>
           {verse.words.map((word, idx) => {
             if (!word.conversion || !word.conversion.lettersArray.length) {
               return null;
@@ -55,27 +42,13 @@ function VerseCard({ verse, selectedSuraNumber, showMetrics }) {
 }
 
 export default function QuranVerseList({ versesArray = [], selectedSura }) {
-  const [showMetrics, setShowMetrics] = useState(false);
-
   return (
     <div>
-      <div className="d-flex justify-content-center mb-3">
-        <div className="btn-group btn-group-sm" role="group">
-          <button
-            type="button"
-            className={`btn ${showMetrics ? "btn-primary" : "btn-outline-secondary"}`}
-            onClick={() => setShowMetrics((v) => !v)}
-          >
-            {showMetrics ? "إخفاء الأرقام" : "إظهار الأرقام"}
-          </button>
-        </div>
-      </div>
       {versesArray.map((v) => (
         <VerseCard
           key={v.id || `${selectedSura.number}-${v.verseNumber}`}
           verse={v}
           selectedSuraNumber={selectedSura.number}
-          showMetrics={showMetrics}
         />
       ))}
     </div>

@@ -4,7 +4,7 @@ const API_BASE =
 export const revalidate = 0;
 
 async function fetchSuraData(suraId) {
-  const res = await fetch(`${API_BASE}/quran/${suraId}`, {
+  const res = await fetch(`${API_BASE}/quran/${suraId}?mode=light`, {
     cache: "no-store",
   });
   if (!res.ok) {
