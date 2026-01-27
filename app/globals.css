@@ -52,9 +52,14 @@ html {
   font-size: 185%;
   direction: rtl;
   text-align: right;
-  line-height: 1.7em;
+  line-height: 1.9em;
   position: relative;
   font-weight: 500;
+  display: inline;
+}
+
+.toHover + .toHover {
+  margin-inline-start: 0.35em;
 }
 
 .verseLetterCount {
