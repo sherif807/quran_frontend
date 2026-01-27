@@ -1,3 +1,37 @@
+@font-face {
+  font-family: "ScheherazadeRW";
+  src: url("/fonts/Scheherazade-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ScheherazadeRW";
+  src: url("/fonts/Scheherazade-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ScheherazadeNew";
+  src: url("/fonts/Scheherazade_New/ScheherazadeNew-Regular.ttf")
+    format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ScheherazadeNew";
+  src: url("/fonts/Scheherazade_New/ScheherazadeNew-Medium.ttf")
+    format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
   background-color: #f8f9fa;
@@ -13,12 +47,14 @@ html {
 }
 
 .toHover {
-  font-family: var(--font-scheherazade), "ScheherazadeRW", sans-serif;
+  font-family: "ScheherazadeNew", "ScheherazadeRW", var(--font-scheherazade),
+    sans-serif;
   font-size: 185%;
   direction: rtl;
   text-align: right;
   line-height: 1.7em;
   position: relative;
+  font-weight: 500;
 }
 
 .verseLetterCount {
@@ -44,8 +80,8 @@ html {
   color: inherit;
   text-decoration: none;
   display: inline;
-  margin: 0 0.1em;
-  font-weight: 800;
+  margin: 0;
+  font-weight: inherit;
 }
 
 .word-wrapper {
@@ -58,7 +94,7 @@ html {
 }
 
 .wordRoot .house {
-  font-weight: 800;
+  font-weight: inherit;
 }
 
 .wordLetterCount {
@@ -198,11 +234,12 @@ html {
 }
 
 .quran-verse {
-  font-size: 122%;
+  font-size: 100%;
   direction: rtl;
   text-align: right;
-  font-family: var(--font-scheherazade), "ScheherazadeRW", serif;
-  font-weight: 800;
+  font-family: "ScheherazadeNew", "ScheherazadeRW", var(--font-scheherazade),
+    serif;
+  font-weight: 500;
   color: #212529;
 }
 

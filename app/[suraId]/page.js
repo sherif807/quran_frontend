@@ -60,7 +60,7 @@ function Verse({ verse, selectedSuraNumber }) {
           </span>
         );
       })}
-      <span className="badge badge-dark" style={{ fontSize: "0.7rem" }}>
+      <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
         {verse.verseNumber}
       </span>
     </span>
