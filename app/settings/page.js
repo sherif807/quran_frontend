@@ -1,6 +1,7 @@
 import Header from "../components/Header";
 import SpeechSettings from "../components/SpeechSettings";
-import Link from "next/link";
+import QuranTranslationSettings from "../components/QuranTranslationSettings";
+import BackButton from "../components/BackButton";
 
 export const metadata = {
   title: "Settings",
@@ -30,10 +31,10 @@ export default function SettingsPage() {
         defaultPreviewText="Ἐν ἀρχῇ ἦν ὁ λόγος"
       />
 
+      <QuranTranslationSettings />
+
       <div className="mt-4">
-        <Link className="btn btn-sm btn-outline-secondary" href="/nt/MT%201">
-          Back
-        </Link>
+        <BackButton fallbackHref="/1" />
       </div>
     </div>
   );

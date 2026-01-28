@@ -190,6 +190,17 @@ html {
 .translation {
   font-size: 1.05rem;
   line-height: 1.6;
+  display: block;
+}
+
+.quran-translation-label {
+  color: #6c757d;
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
+.hide-translations .quran-translation-label {
+  display: none;
 }
 
 #progress-indicator {
@@ -246,6 +257,10 @@ html {
     serif;
   font-weight: 500;
   color: #212529;
+}
+
+.quran-verse-per {
+  font-size: 115%;
 }
 
 .wordRootTanakh {

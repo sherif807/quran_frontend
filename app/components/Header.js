@@ -5,6 +5,18 @@ import { useRouter, usePathname } from "next/navigation";
 import { useMemo, useEffect, useState } from "react";
 import TranslationToggle from "./TranslationToggle";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
+
+const readCookie = (key) => {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${key}=`));
+  return match ? decodeURIComponent(match.split("=")[1]) : "";
+};
+
 export default function Header({
   allSuras = {},
   selectedSuraNumber,
@@ -12,7 +24,6 @@ export default function Header({
   selectedBook,
   selectedChapter,
   showTranslationToggle = false,
-  quranView = "classic",
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -74,6 +85,42 @@ export default function Header({
   const [selectedTanakhChapter, setSelectedTanakhChapter] = useState(
     selectedChapter || ""
   );
+
+  const [translationName, setTranslationName] = useState("");
+  const [suraNameTranslations, setSuraNameTranslations] = useState({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw =
+      window.localStorage.getItem("quran_translations") ||
+      readCookie("quran_translations");
+    const firstCode = raw
+      ? raw.split(",").map((t) => t.trim()).filter(Boolean)[0]
+      : "";
+    if (!firstCode) {
+      setTranslationName("");
+      return;
+    }
+
+    fetch(`${API_BASE}/quran/sura-names?lang=${encodeURIComponent(firstCode)}`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        setSuraNameTranslations(data.names || {});
+        setTranslationName(firstCode.toUpperCase());
+      })
+      .catch(() => {
+        setSuraNameTranslations({});
+        setTranslationName(firstCode.toUpperCase());
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!pathname || pathname === "/settings") return;
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("last-page", pathname);
+  }, [pathname]);
 
   // translation toggle moved to floating control on Tanakh pages
 
@@ -143,72 +190,9 @@ export default function Header({
         id="navbarContent"
         dir="rtl"
       >
-        <div className="d-flex flex-column flex-md-row w-100">
-          {suraList.length > 0 && (
-            <div className="header-dropdown w-100 mb-3 mb-md-0" style={{ maxWidth: "260px" }}>
-              <div className="dropdown w-100">
-                <button
-                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
-                  type="button"
-                  id="suraDropdown"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  {selectedSuraLabel}
-                </button>
-                <div
-                  className="dropdown-menu w-100"
-                  aria-labelledby="suraDropdown"
-                  style={{ maxHeight: "260px", overflowY: "auto" }}
-                >
-                  {suraList.map((sura) => (
-                    <button
-                      key={sura.number}
-                      className="dropdown-item"
-                      type="button"
-                      onClick={() =>
-                        handleSuraChange({ target: { value: sura.number } })
-                      }
-                    >
-                      {sura.name} - {sura.number}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-2">
-                <div className="btn-group btn-group-sm w-100" role="group" aria-label="Quran view">
-                  <Link
-                    className={`btn ${
-                      quranView === "classic" ? "btn-primary" : "btn-outline-secondary"
-                    }`}
-                    href={`/${selectedSuraNumber || 1}`}
-                  >
-                    عرض عادي
-                  </Link>
-                  <Link
-                    className={`btn ${
-                      quranView === "verse" ? "btn-primary" : "btn-outline-secondary"
-                    }`}
-                    href={`/verses/${selectedSuraNumber || 1}`}
-                  >
-                    عرض الآيات
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="ml-md-3 mt-3 mt-md-0">
-            <div className="btn-group" role="group" aria-label="Select source">
-              <Link
-                className={`btn btn-sm ${
-                  currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                href={quranView === "verse" ? "/verses/1" : "/1"}
-              >
-                Quran
-              </Link>
+        <div className="d-flex flex-column w-100">
+          <div className="mb-3 mt-3">
+            <div className="btn-group w-100" role="group" aria-label="Select source">
               <Link
                 className={`btn btn-sm ${
                   currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
@@ -223,15 +207,75 @@ export default function Header({
                 }`}
                 href="/nt/MT%201"
               >
-                NT
+                Gospel
+              </Link>
+              <Link
+                className={`btn btn-sm ${
+                  currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                href="/1"
+              >
+                Quran
               </Link>
             </div>
           </div>
+
+          {suraList.length > 0 && currentBook === "Quran" && (
+            <div className="header-dropdown w-100 mb-3">
+              <div className="dropdown w-100">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="suraDropdown"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {selectedSuraLabel}
+                  {translationName && (
+                    <span className="quran-translation-label">
+                      {" "}
+                      · {suraNameTranslations[selectedSuraNumber] ||
+                        translationName}
+                    </span>
+                  )}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="suraDropdown"
+                >
+                  {suraList.map((sura) => (
+                    <button
+                      key={sura.number}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() =>
+                        handleSuraChange({ target: { value: sura.number } })
+                      }
+                    >
+                      {sura.name} - {sura.number}
+                      {translationName && suraNameTranslations[sura.number] && (
+                        <span className="quran-translation-label">
+                          {" "}
+                          · {suraNameTranslations[sura.number]}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-3 mt-md-0">
-          <Link className="btn btn-sm btn-outline-secondary w-100" href="/settings">
-            Settings
+          <Link
+            className="btn btn-sm btn-outline-secondary w-100"
+            href="/settings"
+            aria-label="Settings"
+            title="Settings"
+          >
+            <i className="bi bi-gear" />
           </Link>
         </div>
 
@@ -324,6 +368,13 @@ export default function Header({
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        ) : showTranslationToggle ? (
+          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
+            <div className="form-group d-flex align-items-center justify-content-between mb-0">
+              <span className="small text-muted mb-0">Show translations</span>
+              <TranslationToggle />
             </div>
           </div>
         ) : null}

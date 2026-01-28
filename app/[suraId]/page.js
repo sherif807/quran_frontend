@@ -3,12 +3,18 @@ const API_BASE =
 
 export const revalidate = 0;
 
-async function fetchSuraData(suraId) {
-  const res = await fetch(`${API_BASE}/quran/${suraId}?mode=light`, {
+async function fetchSuraData(suraId, translationParam) {
+  const translationQuery = translationParam
+    ? `&translation=${encodeURIComponent(translationParam)}`
+    : "";
+  const res = await fetch(
+    `${API_BASE}/quran/${suraId}?mode=light${translationQuery}`,
+    {
     // Cache on the Next.js side to reduce repeated API calls for read-only data.
     // Avoid storing oversized responses (>2MB) by skipping Next cache here.
     cache: "no-store",
-  });
+    }
+  );
   if (!res.ok) {
     throw new Error(`Failed to load sura ${suraId}`);
   }
@@ -30,7 +36,7 @@ export async function generateMetadata({ params }) {
   }
 }
 
-function Verse({ verse, selectedSuraNumber }) {
+function Verse({ verse, selectedSuraNumber, translations = [] }) {
   return (
     <span className="toHover mb-3" id={`verse-${verse.verseNumber}`}>
       {verse.words.map((word, idx) => {
@@ -63,14 +69,19 @@ function Verse({ verse, selectedSuraNumber }) {
       <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
         {verse.verseNumber}
       </span>
+      <span className="d-block mt-2">
+        <VerseTranslations translations={translations} />
+      </span>
     </span>
   );
 }
 
 export default async function SuraPage({ params }) {
   const suraId = params.suraId || "1";
-  const data = await fetchSuraData(suraId);
-  const { allSuras, selectedSura, versesArray } = data;
+  const { cookies } = await import("next/headers");
+  const translationCookie = cookies().get("quran_translations")?.value || "";
+  const data = await fetchSuraData(suraId, translationCookie);
+  const { allSuras, selectedSura, versesArray, translationsByVerse } = data;
 
   const hasPrev = selectedSura.number > 1;
   const hasNext = selectedSura.number < 114;
@@ -83,7 +94,7 @@ export default async function SuraPage({ params }) {
       <Header
         allSuras={allSuras}
         selectedSuraNumber={selectedSura.number}
-        quranView="classic"
+        showTranslationToggle
       />
       <nav aria-label="Page navigation example">
         <ul className="pagination justify-content-center mt-2">
@@ -127,6 +138,7 @@ export default async function SuraPage({ params }) {
               key={verse.id}
               verse={verse}
               selectedSuraNumber={selectedSura.number}
+              translations={translationsByVerse?.[verse.verseNumber] || []}
               />
             ))}
           </p>
@@ -160,3 +172,4 @@ export default async function SuraPage({ params }) {
   );
 }
 import Header from "../components/Header";
+import VerseTranslations from "../components/VerseTranslations";
