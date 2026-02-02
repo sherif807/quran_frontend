@@ -40,6 +40,7 @@ export default async function TanakhRootPage({ params }) {
         allSuras={{}}
         tanakhMenu={data.menu || {}}
         showTranslationToggle
+        section="tanakh"
       />
       <h3 className="mb-4">{data.title}</h3>
       {Object.entries(data.verseArray || {}).map(([book, chapters]) =>

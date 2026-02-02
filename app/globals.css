@@ -263,6 +263,16 @@ html {
   font-size: 115%;
 }
 
+.search-quran-text {
+  font-family: "ScheherazadeNew", "ScheherazadeRW", var(--font-scheherazade),
+    sans-serif;
+  font-size: 185%;
+  line-height: 1.9em;
+  direction: rtl;
+  text-align: right;
+  font-weight: 500;
+}
+
 .wordRootTanakh {
   cursor: pointer;
   color: #212529;
@@ -343,6 +353,29 @@ html {
 }
 
 .nt-progress.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.quran-progress {
+  position: fixed;
+  left: 12px;
+  bottom: 16px;
+  z-index: 1200;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #212529;
+  border: 1px solid #dcdfe1;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.quran-progress.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -508,12 +541,186 @@ input:checked + .slider:before {
 
 .header-top {
   min-height: 40px;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.header-switch-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+@media (max-width: 991.98px) {
+  .header-top {
+    flex-direction: row;
+  }
+
+  .header-row-top {
+    width: auto;
+  }
+
+  .navbar-toggler {
+    order: 0;
+    margin-left: 0;
+  }
+}
+
+.header-logo {
+  flex: 0 0 auto;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  direction: ltr;
+}
+
+.header-row-top {
+  justify-content: flex-start;
+}
+
+.header-row-top > .header-logo,
+.header-row-top > .header-scripture-tabs,
+.header-row-top > .header-sura-inline {
+  flex: 1 1 0;
+}
+
+.header-row-top > .header-scripture-tabs {
+  justify-content: center;
+}
+
+.header-row-top > .header-sura-inline {
+  justify-content: flex-end;
+}
+
+.header-row-top > .header-sura-inline .dropdown {
+  margin-left: auto;
+}
+
+.header-placeholder {
+  min-height: 1px;
+}
+
+.header-bible-selectors {
+  gap: 10px;
+}
+
+.header-bible-selectors .dropdown {
+  flex: 1 1 0;
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 240px;
+  flex: 1 1 0;
+  justify-content: space-between;
+  direction: ltr;
+}
+
+.header-search .form-control {
+  min-width: 180px;
+}
+
+.header-search .btn {
+  margin-left: auto;
+}
+
+@media (max-width: 991.98px) {
+  .header-search {
+    width: 100%;
+  }
+
+  .header-search .form-control {
+    flex: 1 1 auto;
+  }
+}
+
+.header-search-results {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.header-row-bottom {
+  justify-content: flex-start;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.header-scripture-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.header-top-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.header-sura-inline {
+  min-width: 280px;
+  max-width: 420px;
+  flex: 1 1 auto;
+}
+
+@media (min-width: 992px) {
+  .navbar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch;
+  }
+
+  .header-top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .header-row-top,
+  .header-row-bottom {
+    width: 100%;
+  }
+
+  .header-sura-inline {
+    width: clamp(280px, 36vw, 460px);
+  }
+
+  .header-top-controls .btn-group {
+    flex: 0 0 auto;
+  }
+}
+
+.theme-toggle-btn {
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d9dde1;
+  color: #1f1f1f;
+}
+
+.theme-toggle-btn i {
+  font-size: 1rem;
+}
+
+.dark-mode .theme-toggle-btn i {
+  color: #b7bcc3;
+}
+
+.theme-toggle-btn:hover,
+.theme-toggle-btn:focus {
+  background: #fff;
+  border-color: #bfc5cb;
+  color: #0f0f0f;
 }
 
 .header-select {
@@ -563,10 +770,67 @@ input:checked + .slider:before {
 .header-dropdown .dropdown-menu {
   width: 100%;
   min-width: unset;
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .header-dropdown .btn {
   text-align: left;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.header-translation-inline .theme-switch {
+  margin: 0;
+}
+
+.show-translations-link {
+  cursor: pointer;
+}
+
+@media (min-width: 992px) {
+  .navbar-collapse {
+    align-items: center;
+  }
+
+  .header-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .header-left {
+    flex: 1;
+    max-width: 620px;
+  }
+
+  .header-right {
+    justify-content: flex-end;
+  }
+
+  .header-sura {
+    max-width: 520px;
+  }
 }
 
 .copy-chapter-btn {

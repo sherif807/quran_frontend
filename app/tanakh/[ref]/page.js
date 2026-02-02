@@ -63,6 +63,7 @@ export default async function TanakhPage({ params }) {
         selectedBook={selectedBook}
         selectedChapter={selectedChapter}
         showTranslationToggle
+        section="tanakh"
       />
 
       <nav aria-label="Tanakh navigation">

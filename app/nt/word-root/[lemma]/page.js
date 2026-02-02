@@ -35,6 +35,7 @@ export default async function NtLemmaPage({ params }) {
         allSuras={{}}
         tanakhMenu={data.menu || {}}
         showTranslationToggle
+        section="nt"
       />
       <h3 className="mb-4" style={{ direction: "ltr" }}>
         {data.title}

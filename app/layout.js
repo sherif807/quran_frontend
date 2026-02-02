@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Noto_Serif_Hebrew } from "next/font/google";
+import Script from "next/script";
 
 const scheherazade = localFont({
   src: "../public/fonts/Scheherazade-Regular.woff",
@@ -34,6 +35,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || "G-WGKCH9GJTW";
   return (
     <html
       lang="en"
@@ -64,6 +66,22 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="bg-light">
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
         <div className="container py-3">{children}</div>
       </body>
     </html>

@@ -29,7 +29,7 @@ export default async function WordRootPage({ params }) {
 
   return (
     <div className="container py-3">
-      <Header allSuras={data.allSuras} />
+      <Header allSuras={data.allSuras} section="quran" />
       <h3 className="mb-4">{data.title}</h3>
       {data.versesArray.map((verse) => {
         const suraMeta = data.allSuras[verse.suraNumber];
@@ -57,13 +57,17 @@ export default async function WordRootPage({ params }) {
               const highlighted =
                 word.highlightWordNumber &&
                 word.highlightWordNumber === word.position;
+              const nextWordPosition = `${verse.suraNumber}:${verse.verseNumber}:${word.position}`;
               return (
                 <span key={word.position} className="word-wrapper">
-                  <span
+                  <a
                     className={`wordRoot ${highlighted ? "text-info" : ""}`}
+                    href={`/word-root/${nextWordPosition}`}
+                    target="_blank"
+                    rel="noreferrer"
                   >
                     {arabicWord}
-                  </span>{" "}
+                  </a>{" "}
                 </span>
               );
             })}

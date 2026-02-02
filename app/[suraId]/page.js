@@ -38,7 +38,11 @@ export async function generateMetadata({ params }) {
 
 function Verse({ verse, selectedSuraNumber, translations = [] }) {
   return (
-    <span className="toHover mb-3" id={`verse-${verse.verseNumber}`}>
+    <span
+      className="toHover mb-3"
+      id={`verse-${verse.verseNumber}`}
+      data-verse-ref={`${selectedSuraNumber}:${verse.verseNumber}`}
+    >
       {verse.words.map((word, idx) => {
         const wordText =
           word.wordText ||
@@ -95,6 +99,7 @@ export default async function SuraPage({ params }) {
         allSuras={allSuras}
         selectedSuraNumber={selectedSura.number}
         showTranslationToggle
+        section="quran"
       />
       <nav aria-label="Page navigation example">
         <ul className="pagination justify-content-center mt-2">
@@ -168,8 +173,10 @@ export default async function SuraPage({ params }) {
           )}
         </ul>
       </nav>
+      <QuranProgress totalVerses={versesArray.length} />
     </>
   );
 }
 import Header from "../components/Header";
 import VerseTranslations from "../components/VerseTranslations";
+import QuranProgress from "../components/QuranProgress";

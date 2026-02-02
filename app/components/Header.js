@@ -24,6 +24,7 @@ export default function Header({
   selectedBook,
   selectedChapter,
   showTranslationToggle = false,
+  section,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,14 +40,24 @@ export default function Header({
     return match ? `${match.name} - ${match.number}` : "Select a sura";
   }, [suraList, selectedSuraNumber]);
 
-  const currentBook =
-    pathname && pathname.startsWith("/tanakh")
+  const resolvedSection = section || "";
+  const currentBook = resolvedSection
+    ? resolvedSection === "tanakh"
       ? "Bible"
-      : pathname && pathname.startsWith("/nt")
+      : resolvedSection === "nt"
       ? "NT"
-      : "Quran";
-  const isNt = pathname && pathname.startsWith("/nt");
-  const isTanakh = pathname && pathname.startsWith("/tanakh");
+      : "Quran"
+    : pathname && pathname.startsWith("/tanakh")
+    ? "Bible"
+    : pathname && pathname.startsWith("/nt")
+    ? "NT"
+    : "Quran";
+  const isNt = resolvedSection
+    ? resolvedSection === "nt"
+    : pathname && pathname.startsWith("/nt");
+  const isTanakh = resolvedSection
+    ? resolvedSection === "tanakh"
+    : pathname && pathname.startsWith("/tanakh");
   const readerBasePath = isNt ? "/nt" : "/tanakh";
 
   const handleSuraChange = (e) => {
@@ -88,6 +99,8 @@ export default function Header({
 
   const [translationName, setTranslationName] = useState("");
   const [suraNameTranslations, setSuraNameTranslations] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -122,6 +135,16 @@ export default function Header({
     window.localStorage.setItem("last-page", pathname);
   }, [pathname]);
 
+  const runTextSearch = async (e) => {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
+    setSearchLoading(true);
+    router.push(`/search-text?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
+    setSearchLoading(false);
+  };
+
   // translation toggle moved to floating control on Tanakh pages
 
   const bookOptions = useMemo(() => Object.keys(tanakhMenu), [tanakhMenu]);
@@ -151,29 +174,9 @@ export default function Header({
 
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light mb-3 sticky-top shadow-sm">
-      <div className="d-flex w-100 align-items-center justify-content-between position-relative header-top">
-        <div className="navbar-brand mb-0 pb-0">
-          <Link href="/1" className="text-dark text-decoration-none">
-            Quranalive
-          </Link>
-        </div>
-
-        <div className="header-switch-center">
-          <div className="theme-switch-wrapper d-flex align-items-center">
-            <label className="theme-switch" htmlFor="theme-switch-checkbox">
-              <input
-                type="checkbox"
-                id="theme-switch-checkbox"
-                checked={darkMode}
-                onChange={toggleDarkMode}
-              />
-              <div className="slider round" />
-            </label>
-          </div>
-        </div>
-
+      <div className="d-flex w-100 header-top">
         <button
-          className="navbar-toggler"
+          className="navbar-toggler d-lg-none"
           type="button"
           data-toggle="collapse"
           data-target="#navbarContent"
@@ -183,16 +186,25 @@ export default function Header({
         >
           <span className="navbar-toggler-icon" />
         </button>
-      </div>
 
-      <div
-        className="collapse navbar-collapse justify-content-between flex-row-reverse align-items-start"
-        id="navbarContent"
-        dir="rtl"
-      >
-        <div className="d-flex flex-column w-100">
-          <div className="mb-3 mt-3">
-            <div className="btn-group w-100" role="group" aria-label="Select source">
+        <div className="header-row header-row-top w-100">
+          <div className="navbar-brand mb-0 pb-0 header-logo d-flex align-items-center">
+            <Link href="/1" className="text-dark text-decoration-none mr-2">
+              Quranalive
+            </Link>
+            <button
+              type="button"
+              className="btn btn-sm theme-toggle-btn"
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? "Disable dark mode" : "Enable dark mode"}
+              title={darkMode ? "Disable dark mode" : "Enable dark mode"}
+            >
+              <i className={`bi ${darkMode ? "bi-moon-fill" : "bi-moon"}`} />
+            </button>
+          </div>
+
+          <div className="header-scripture-tabs d-none d-lg-flex">
+            <div className="btn-group" role="group" aria-label="Select source">
               <Link
                 className={`btn btn-sm ${
                   currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
@@ -221,12 +233,12 @@ export default function Header({
           </div>
 
           {suraList.length > 0 && currentBook === "Quran" && (
-            <div className="header-dropdown w-100 mb-3">
+            <div className="header-sura-inline header-dropdown d-none d-lg-flex">
               <div className="dropdown w-100">
                 <button
                   className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
                   type="button"
-                  id="suraDropdown"
+                  id="suraDropdownInline"
                   data-toggle="dropdown"
                   aria-haspopup="true"
                   aria-expanded="false"
@@ -242,7 +254,7 @@ export default function Header({
                 </button>
                 <div
                   className="dropdown-menu w-100"
-                  aria-labelledby="suraDropdown"
+                  aria-labelledby="suraDropdownInline"
                 >
                   {suraList.map((sura) => (
                     <button
@@ -266,24 +278,229 @@ export default function Header({
               </div>
             </div>
           )}
+          {(currentBook !== "Quran") && (isTanakh || isNt) && (
+            <div className="header-sura-inline header-bible-selectors d-none d-lg-flex">
+              <div className="dropdown w-100 header-dropdown">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="bookDropdownInline"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {selectedTanakhBook || "Select a book"}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="bookDropdownInline"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() => handleBookChange({ target: { value: "" } })}
+                  >
+                    Select a book
+                  </button>
+                  {bookOptions.map((book) => (
+                    <button
+                      key={book}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() => handleBookChange({ target: { value: book } })}
+                    >
+                      {book}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="dropdown w-100 header-dropdown">
+                <button
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                  type="button"
+                  id="chapterDropdownInline"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  disabled={!selectedTanakhBook}
+                >
+                  {selectedTanakhChapter || "Select a chapter"}
+                </button>
+                <div
+                  className="dropdown-menu w-100"
+                  aria-labelledby="chapterDropdownInline"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() =>
+                      handleChapterChange({ target: { value: "" } })
+                    }
+                    disabled={!selectedTanakhBook}
+                  >
+                    Select a chapter
+                  </button>
+                  {chapterOptions.map((ch) => (
+                    <button
+                      key={ch}
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() =>
+                        handleChapterChange({ target: { value: ch } })
+                      }
+                    >
+                      {ch}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="header-row header-row-bottom d-none d-lg-flex w-100">
+          <form className="header-search" onSubmit={runTextSearch}>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              type="submit"
+              disabled={searchLoading}
+            >
+              {searchLoading ? "..." : "Search"}
+            </button>
+          </form>
+          {showTranslationToggle && (
+            <div className="header-translation-inline d-flex align-items-center">
+              <TranslationToggle />
+              <Link
+                className="small text-muted mb-0 ml-2 show-translations-link"
+                href="/settings"
+              >
+                Translations
+              </Link>
+            </div>
+          )}
         </div>
 
-        <div className="mt-3 mt-md-0">
-          <Link
-            className="btn btn-sm btn-outline-secondary w-100"
-            href="/settings"
-            aria-label="Settings"
-            title="Settings"
-          >
-            <i className="bi bi-gear" />
-          </Link>
+      <div className="collapse navbar-collapse" id="navbarContent" dir="rtl">
+        <div className="header-content w-100">
+          <div className="header-left">
+            <div className="mb-3 mb-md-0 mt-3 mt-md-0 d-lg-none">
+              <div className="btn-group w-100" role="group" aria-label="Select source">
+                <Link
+                  className={`btn btn-sm ${
+                    currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
+                  }`}
+                  href="/tanakh/GEN%201"
+                >
+                  Tanakh
+                </Link>
+                <Link
+                  className={`btn btn-sm ${
+                    currentBook === "NT" ? "btn-primary" : "btn-outline-secondary"
+                  }`}
+                  href="/nt/MT%201"
+                >
+                  Gospel
+                </Link>
+                <Link
+                  className={`btn btn-sm ${
+                    currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
+                  }`}
+                  href="/1"
+                >
+                  Quran
+                </Link>
+              </div>
+            </div>
+
+            <form className="header-search d-lg-none mb-3" onSubmit={runTextSearch}>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                type="submit"
+                disabled={searchLoading}
+              >
+                {searchLoading ? "..." : "Search"}
+              </button>
+            </form>
+
+            {suraList.length > 0 && currentBook === "Quran" && (
+              <div className="header-dropdown w-100 mb-3 mb-md-0 header-sura d-lg-none">
+                <div className="dropdown w-100">
+                  <button
+                    className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                    type="button"
+                    id="suraDropdown"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
+                    {selectedSuraLabel}
+                    {translationName && (
+                      <span className="quran-translation-label">
+                        {" "}
+                        · {suraNameTranslations[selectedSuraNumber] ||
+                          translationName}
+                      </span>
+                    )}
+                  </button>
+                  <div
+                    className="dropdown-menu w-100"
+                    aria-labelledby="suraDropdown"
+                  >
+                    {suraList.map((sura) => (
+                      <button
+                        key={sura.number}
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() =>
+                          handleSuraChange({ target: { value: sura.number } })
+                        }
+                      >
+                        {sura.name} - {sura.number}
+                        {translationName && suraNameTranslations[sura.number] && (
+                          <span className="quran-translation-label">
+                            {" "}
+                            · {suraNameTranslations[sura.number]}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="header-right d-none d-lg-flex" />
         </div>
 
         {(isTanakh || isNt) ? (
-          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
+          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-lg-none">
             {showTranslationToggle && (
               <div className="form-group d-flex align-items-center justify-content-between mb-3">
-                <span className="small text-muted mb-0">Show translations</span>
+                <Link
+                  className="small text-muted mb-0 show-translations-link"
+                  href="/settings"
+                >
+                  Translations
+                </Link>
                 <TranslationToggle />
               </div>
             )}
@@ -371,12 +588,17 @@ export default function Header({
             </div>
           </div>
         ) : showTranslationToggle ? (
-          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm">
+          <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-md-none">
             <div className="form-group d-flex align-items-center justify-content-between mb-0">
-              <span className="small text-muted mb-0">Show translations</span>
+              <Link
+                className="small text-muted mb-0 show-translations-link"
+                href="/settings"
+              >
+                Translations
+              </Link>
               <TranslationToggle />
             </div>
-          </div>
+        </div>
         ) : null}
       </div>
     </nav>

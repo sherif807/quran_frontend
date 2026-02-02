@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-export default function TranslationToggle({ className = "" }) {
+export default function TranslationToggle({
+  className = "",
+  id = "translation-switch-checkbox-floating",
+}) {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -25,12 +28,12 @@ export default function TranslationToggle({ className = "" }) {
   return (
     <label
       className={`theme-switch mb-0 ${className}`}
-      htmlFor="translation-switch-checkbox-floating"
+      htmlFor={id}
       title="Show translations"
     >
       <input
         type="checkbox"
-        id="translation-switch-checkbox-floating"
+        id={id}
         checked={enabled}
         onChange={toggle}
       />

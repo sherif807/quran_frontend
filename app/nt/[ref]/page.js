@@ -53,6 +53,7 @@ export default async function NtPage({ params }) {
         selectedBook={selectedBook}
         selectedChapter={selectedChapter}
         showTranslationToggle
+        section="nt"
       />
 
       <nav aria-label="NT navigation">
