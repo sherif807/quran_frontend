@@ -135,6 +135,34 @@ export default function Header({
     window.localStorage.setItem("last-page", pathname);
   }, [pathname]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const shouldOpen = window.localStorage.getItem("nav-open") === "1";
+    if (!shouldOpen) return;
+    const collapse = document.getElementById("navbarContent");
+    if (collapse && !collapse.classList.contains("show")) {
+      collapse.classList.add("show");
+      const toggler = document.querySelector(".navbar-toggler");
+      if (toggler) {
+        toggler.setAttribute("aria-expanded", "true");
+      }
+    }
+  }, []);
+
+  const setNavOpen = (open) => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("nav-open", open ? "1" : "0");
+  };
+
+  const handleTogglerClick = () => {
+    if (typeof window === "undefined") return;
+    window.setTimeout(() => {
+      const collapse = document.getElementById("navbarContent");
+      const isOpen = !!collapse && collapse.classList.contains("show");
+      setNavOpen(isOpen);
+    }, 0);
+  };
+
   const runTextSearch = async (e) => {
     e.preventDefault();
     const trimmed = searchQuery.trim();
@@ -151,6 +179,9 @@ export default function Header({
           toggler.setAttribute("aria-expanded", "false");
         }
       }
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("nav-open", "0");
     }
     setSearchLoading(false);
   };
@@ -193,6 +224,7 @@ export default function Header({
           aria-controls="navbarContent"
           aria-expanded="false"
           aria-label="Toggle navigation"
+          onClick={handleTogglerClick}
         >
           <span className="navbar-toggler-icon" />
         </button>
@@ -220,6 +252,7 @@ export default function Header({
                   currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
                 }`}
                 href="/tanakh/GEN%201"
+                onClick={() => setNavOpen(true)}
               >
                 Tanakh
               </Link>
@@ -228,6 +261,7 @@ export default function Header({
                   currentBook === "NT" ? "btn-primary" : "btn-outline-secondary"
                 }`}
                 href="/nt/MT%201"
+                onClick={() => setNavOpen(true)}
               >
                 Gospel
               </Link>
@@ -236,6 +270,7 @@ export default function Header({
                   currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
                 }`}
                 href="/1"
+                onClick={() => setNavOpen(true)}
               >
                 Quran
               </Link>
@@ -411,6 +446,7 @@ export default function Header({
                     currentBook === "Bible" ? "btn-primary" : "btn-outline-secondary"
                   }`}
                   href="/tanakh/GEN%201"
+                  onClick={() => setNavOpen(true)}
                 >
                   Tanakh
                 </Link>
@@ -419,6 +455,7 @@ export default function Header({
                     currentBook === "NT" ? "btn-primary" : "btn-outline-secondary"
                   }`}
                   href="/nt/MT%201"
+                  onClick={() => setNavOpen(true)}
                 >
                   Gospel
                 </Link>
@@ -427,6 +464,7 @@ export default function Header({
                     currentBook === "Quran" ? "btn-primary" : "btn-outline-secondary"
                   }`}
                   href="/1"
+                  onClick={() => setNavOpen(true)}
                 >
                   Quran
                 </Link>

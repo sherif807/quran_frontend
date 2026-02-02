@@ -632,6 +632,16 @@ input:checked + .slider:before {
     padding-bottom: 0.6rem;
     height: 44px;
   }
+
+  .header-search .form-control {
+    flex: 0 0 70%;
+    max-width: 70%;
+  }
+
+  .header-search .btn {
+    flex: 0 0 30%;
+    max-width: 30%;
+  }
 }
 
 @media (max-width: 991.98px) {
@@ -788,9 +798,14 @@ input:checked + .slider:before {
   text-align: left;
 }
 
+.header-dropdown .dropdown-toggle::after {
+  display: none;
+}
+
 @media (max-width: 991.98px) {
   .header-dropdown .btn {
-    font-size: 1.05rem;
+    font-size: 1.2rem;
+    font-weight: 600;
   }
 }
 
