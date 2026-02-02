@@ -22,6 +22,9 @@ const stripArabic = (value) => {
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
     .replace(/[\u0640]/g, "")
     .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
+    .replace(/[\u0649]/g, "\u064A")
+    .replace(/[\u0629]/g, "\u0647")
+    .replace(/[\u0624\u0626\u0621]/g, "\u0621")
     .replace(/\s+/g, " ")
     .trim();
 };
@@ -50,10 +53,37 @@ const normalizeText = (value) =>
 const normalizeGreek = (value) =>
   normalizeText(value).replace(/\u03c2/g, "\u03c3");
 
+const buildArabicTokenRegex = (token) => {
+  if (!token) return null;
+  const buildPattern = (value) => {
+    const chars = value.split("").map((ch) => {
+      if (ch === "ا") return "(?:ا|ء)?";
+      if (ch === "ه") return "[هة]";
+      if (ch === "ي") return "[يى]";
+      if (ch === "ء") return "(?:[ءؤئ]|ا)?";
+      return ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    });
+    return chars.join("");
+  };
+  const base = buildPattern(token);
+  if (token.endsWith("اه")) {
+    const altToken = token.replace(/اه$/, "يه");
+    if (altToken !== token) {
+      const alt = buildPattern(altToken);
+      return new RegExp(`(?:${base}|${alt})`);
+    }
+  }
+  return new RegExp(base);
+};
+
 const matchesArabicWord = (word, queryTokens) => {
-  const cleanedWord = stripArabic(word);
+  const cleanedWord = stripArabic(word).replace(/\s+/g, "");
   if (!cleanedWord) return false;
-  return queryTokens.some((token) => cleanedWord.includes(token));
+  return queryTokens.some((token) => {
+    const regex = buildArabicTokenRegex(token);
+    if (!regex) return false;
+    return regex.test(cleanedWord);
+  });
 };
 
 const matchesToken = (text, tokens) => {
