@@ -626,6 +626,15 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 991.98px) {
+  .header-search .form-control,
+  .header-search .btn {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    height: 44px;
+  }
+}
+
+@media (max-width: 991.98px) {
   .header-search {
     width: 100%;
   }
@@ -777,6 +786,12 @@ input:checked + .slider:before {
 
 .header-dropdown .btn {
   text-align: left;
+}
+
+@media (max-width: 991.98px) {
+  .header-dropdown .btn {
+    font-size: 1.05rem;
+  }
 }
 
 .header-content {

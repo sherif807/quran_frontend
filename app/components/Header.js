@@ -142,6 +142,16 @@ export default function Header({
     const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
     setSearchLoading(true);
     router.push(`/search-text?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
+    if (typeof document !== "undefined") {
+      const collapse = document.getElementById("navbarContent");
+      if (collapse && collapse.classList.contains("show")) {
+        collapse.classList.remove("show");
+        const toggler = document.querySelector(".navbar-toggler");
+        if (toggler) {
+          toggler.setAttribute("aria-expanded", "false");
+        }
+      }
+    }
     setSearchLoading(false);
   };
 
@@ -423,23 +433,6 @@ export default function Header({
               </div>
             </div>
 
-            <form className="header-search d-lg-none mb-3" onSubmit={runTextSearch}>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                type="submit"
-                disabled={searchLoading}
-              >
-                {searchLoading ? "..." : "Search"}
-              </button>
-            </form>
-
             {suraList.length > 0 && currentBook === "Quran" && (
               <div className="header-dropdown w-100 mb-3 mb-md-0 header-sura d-lg-none">
                 <div className="dropdown w-100">
@@ -598,8 +591,27 @@ export default function Header({
               </Link>
               <TranslationToggle />
             </div>
-        </div>
+          </div>
         ) : null}
+
+        <div className="d-lg-none mt-3 mb-3">
+          <form className="header-search" onSubmit={runTextSearch}>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              type="submit"
+              disabled={searchLoading}
+            >
+              {searchLoading ? "..." : "Search"}
+            </button>
+          </form>
+        </div>
       </div>
     </nav>
   );

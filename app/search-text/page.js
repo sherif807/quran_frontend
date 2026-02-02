@@ -201,7 +201,7 @@ export default async function SearchTextPage({ searchParams }) {
   }
 
   return (
-    <div className="container py-3">
+    <div className="py-3">
       <Header
         section={scope}
         showTranslationToggle
