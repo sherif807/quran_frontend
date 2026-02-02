@@ -636,6 +636,7 @@ input:checked + .slider:before {
   .header-search .form-control {
     flex: 0 0 70%;
     max-width: 70%;
+    font-size: 16px;
   }
 
   .header-search .btn {
