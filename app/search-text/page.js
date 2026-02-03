@@ -131,13 +131,16 @@ const highlight = (text, query, corpus) => {
   return result;
 };
 
-async function fetchTextSearch({ query, scope }) {
+async function fetchTextSearch({ query, scope, translationIds }) {
   if (!query) return { ok: false, results: [] };
   const params = new URLSearchParams({
     q: query,
     scope: scope || "quran",
     limit: "100",
   });
+  if (translationIds) {
+    params.set("translations", translationIds);
+  }
   const res = await fetch(`${API_BASE}/search/text?${params.toString()}`, {
     cache: "no-store",
   });
@@ -202,6 +205,16 @@ const getTranslationLang = () => {
   return first || "";
 };
 
+const getBibleTranslationIds = () => {
+  const store = cookies().get("bible_translations")?.value || "";
+  const cleaned = store
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .join(",");
+  return cleaned || "";
+};
+
 async function fetchSuraNameTranslations(lang) {
   if (!lang) return {};
   const res = await fetch(
@@ -217,6 +230,7 @@ export default async function SearchTextPage({ searchParams }) {
   const query = String(searchParams?.q || "").trim();
   const scope = String(searchParams?.scope || "quran").toLowerCase();
   const translationLang = getTranslationLang();
+  const bibleTranslationIds = getBibleTranslationIds();
   const suraNameTranslations = await fetchSuraNameTranslations(translationLang);
   const headerData = await fetchHeaderData(scope);
 
@@ -224,7 +238,11 @@ export default async function SearchTextPage({ searchParams }) {
   let error = "";
   if (query) {
     try {
-      data = await fetchTextSearch({ query, scope });
+      data = await fetchTextSearch({
+        query,
+        scope,
+        translationIds: bibleTranslationIds,
+      });
     } catch (err) {
       error = err?.message || "Search failed.";
     }

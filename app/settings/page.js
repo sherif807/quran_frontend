@@ -1,6 +1,7 @@
 import Header from "../components/Header";
 import SpeechSettings from "../components/SpeechSettings";
 import QuranTranslationSettings from "../components/QuranTranslationSettings";
+import BibleTranslationSettings from "../components/BibleTranslationSettings";
 import BackButton from "../components/BackButton";
 
 export const metadata = {
@@ -32,6 +33,7 @@ export default function SettingsPage() {
       />
 
       <QuranTranslationSettings />
+      <BibleTranslationSettings />
 
       <div className="mt-4">
         <BackButton fallbackHref="/1" />

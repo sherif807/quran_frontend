@@ -1,12 +1,24 @@
 import Header from "../../../components/Header";
 import NtVerseList from "../../../components/NtVerseList";
+import { cookies } from "next/headers";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
+const getTranslationParam = () => {
+  const value = cookies().get("bible_translations")?.value || "";
+  const cleaned = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(",");
+  return cleaned ? `?translations=${encodeURIComponent(cleaned)}` : "";
+};
+
 async function fetchLemma(lemma) {
+  const query = getTranslationParam();
   const res = await fetch(
-    `${API_BASE}/nt/word-root/${encodeURIComponent(lemma)}`,
+    `${API_BASE}/nt/word-root/${encodeURIComponent(lemma)}${query}`,
     { cache: "no-store" }
   );
   if (!res.ok) {

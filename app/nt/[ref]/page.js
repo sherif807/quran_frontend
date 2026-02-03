@@ -1,4 +1,5 @@
 import Header from "../../components/Header";
+import { cookies } from "next/headers";
 import NtVerseList from "../../components/NtVerseList";
 import NtProgress from "../../components/NtProgress";
 
@@ -7,8 +8,19 @@ const API_BASE =
 
 export const revalidate = 0;
 
+const getTranslationParam = () => {
+  const value = cookies().get("bible_translations")?.value || "";
+  const cleaned = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(",");
+  return cleaned ? `?translations=${encodeURIComponent(cleaned)}` : "";
+};
+
 async function fetchNt(ref) {
-  const res = await fetch(`${API_BASE}/nt/${encodeURIComponent(ref)}`, {
+  const query = getTranslationParam();
+  const res = await fetch(`${API_BASE}/nt/${encodeURIComponent(ref)}${query}`, {
     cache: "no-store",
   });
   if (!res.ok) {

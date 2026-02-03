@@ -1,4 +1,5 @@
 import Header from "../../components/Header";
+import { cookies } from "next/headers";
 import CopyChapterHebrew from "../../components/CopyChapterHebrew";
 import TanakhProgress from "../../components/TanakhProgress";
 import SpeechSettings from "../../components/SpeechSettings";
@@ -9,8 +10,19 @@ const API_BASE =
 
 export const revalidate = 0;
 
+const getTranslationParam = () => {
+  const value = cookies().get("bible_translations")?.value || "";
+  const cleaned = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(",");
+  return cleaned ? `?translations=${encodeURIComponent(cleaned)}` : "";
+};
+
 async function fetchTanakh(ref) {
-  const res = await fetch(`${API_BASE}/tanakh/${encodeURIComponent(ref)}`, {
+  const query = getTranslationParam();
+  const res = await fetch(`${API_BASE}/tanakh/${encodeURIComponent(ref)}${query}`, {
     cache: "no-store",
   });
   if (!res.ok) {

@@ -81,6 +81,15 @@ export default function Header({
     document.documentElement.classList.toggle("dark-mode", stored);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dirty = window.sessionStorage.getItem("bible_translations_dirty");
+    if (dirty) {
+      window.sessionStorage.removeItem("bible_translations_dirty");
+      router.refresh();
+    }
+  }, [router]);
+
   const toggleDarkMode = () => {
     const next = !darkMode;
     setDarkMode(next);

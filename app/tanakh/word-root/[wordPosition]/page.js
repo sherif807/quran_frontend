@@ -3,13 +3,25 @@ import PlayHebrew from "../../../components/PlayHebrew";
 import CopyHebrew from "../../../components/CopyHebrew";
 import VerseTranslations from "../../../components/VerseTranslations";
 import SpeechSettings from "../../../components/SpeechSettings";
+import { cookies } from "next/headers";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
+const getTranslationParam = () => {
+  const value = cookies().get("bible_translations")?.value || "";
+  const cleaned = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(",");
+  return cleaned ? `?translations=${encodeURIComponent(cleaned)}` : "";
+};
+
 async function fetchRoot(wordPosition) {
+  const query = getTranslationParam();
   const res = await fetch(
-    `${API_BASE}/tanakh/word-root/${encodeURIComponent(wordPosition)}`,
+    `${API_BASE}/tanakh/word-root/${encodeURIComponent(wordPosition)}${query}`,
     {
       cache: "no-store",
     }
