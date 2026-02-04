@@ -169,8 +169,22 @@ export default function TanakhVerseList({ verseArray = {}, selectedBook, selecte
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [alignmentMode, setAlignmentMode] = useState(false);
 
   const verseEntries = useMemo(() => Object.entries(verseArray || {}), [verseArray]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const read = () =>
+      setAlignmentMode(window.localStorage.getItem("tanakh_alignment_mode") === "1");
+    read();
+    window.addEventListener("storage", read);
+    window.addEventListener("tanakh-alignment-mode-change", read);
+    return () => {
+      window.removeEventListener("storage", read);
+      window.removeEventListener("tanakh-alignment-mode-change", read);
+    };
+  }, []);
 
   const openModal = (word, verseNumber) => {
     setSelectedWord(word);
@@ -185,6 +199,18 @@ export default function TanakhVerseList({ verseArray = {}, selectedBook, selecte
   return (
     <>
       {verseEntries.map(([verseNumber, verseProps]) => (
+        (() => {
+          const sourceTranslation = (verseProps.translations || []).find(
+            (t) => Array.isArray(t.alignments) && t.alignments.length > 0
+          );
+          const indices = Array.from(
+            new Set((sourceTranslation?.alignments || []).map((a) => a.hebrewTokenIndex))
+          ).sort((a, b) => a - b);
+          const toneBySequence = {};
+          indices.forEach((seq, idx) => {
+            toneBySequence[seq] = idx % 10;
+          });
+          return (
         <div
           key={verseNumber}
           className="verse-container mb-2"
@@ -197,7 +223,11 @@ export default function TanakhVerseList({ verseArray = {}, selectedBook, selecte
             {verseProps.words.map((word, idx) => (
               <a
                 key={`${word.ref}-${idx}`}
-                className="hebrew-text wordRootTanakh"
+                className={`hebrew-text wordRootTanakh ${
+                  alignmentMode && toneBySequence[word.wordSequence] !== undefined
+                    ? `alignment-link alignment-link-${toneBySequence[word.wordSequence]}`
+                    : ""
+                }`}
                 data-word-position={word.ref}
                 href="#"
                 onClick={(e) => {
@@ -213,9 +243,15 @@ export default function TanakhVerseList({ verseArray = {}, selectedBook, selecte
           <div className="d-flex align-items-start mt-2">
             <PlayHebrew text={verseProps.words.map((w) => w.displayText).join(" ")} />
             <CopyHebrew text={verseProps.words.map((w) => w.displayText).join(" ")} />
-            <VerseTranslations translations={verseProps.translations} />
+            <VerseTranslations
+              translations={verseProps.translations}
+              alignmentMode={alignmentMode}
+              alignmentToneBySequence={toneBySequence}
+            />
           </div>
         </div>
+          );
+        })()
       ))}
 
       <StrongModal

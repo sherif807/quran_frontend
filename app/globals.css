@@ -292,6 +292,22 @@ html {
   text-decoration: none;
 }
 
+.alignment-link {
+  border-radius: 0.25rem;
+  padding: 0 0.1em;
+}
+
+.alignment-link-0 { background-color: rgba(23, 162, 184, 0.22); }
+.alignment-link-1 { background-color: rgba(255, 193, 7, 0.24); }
+.alignment-link-2 { background-color: rgba(40, 167, 69, 0.22); }
+.alignment-link-3 { background-color: rgba(0, 123, 255, 0.20); }
+.alignment-link-4 { background-color: rgba(220, 53, 69, 0.18); }
+.alignment-link-5 { background-color: rgba(111, 66, 193, 0.20); }
+.alignment-link-6 { background-color: rgba(253, 126, 20, 0.22); }
+.alignment-link-7 { background-color: rgba(32, 201, 151, 0.20); }
+.alignment-link-8 { background-color: rgba(108, 117, 125, 0.20); }
+.alignment-link-9 { background-color: rgba(52, 58, 64, 0.16); }
+
 .tanakh-verse-card {
   width: 100%;
   overflow-wrap: anywhere;

@@ -110,6 +110,7 @@ export default function Header({
   const [suraNameTranslations, setSuraNameTranslations] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
+  const [alignmentMode, setAlignmentMode] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -136,6 +137,11 @@ export default function Header({
         setSuraNameTranslations({});
         setTranslationName(firstCode.toUpperCase());
       });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setAlignmentMode(window.localStorage.getItem("tanakh_alignment_mode") === "1");
   }, []);
 
   useEffect(() => {
@@ -193,6 +199,14 @@ export default function Header({
       window.localStorage.setItem("nav-open", "0");
     }
     setSearchLoading(false);
+  };
+
+  const toggleAlignmentMode = () => {
+    if (typeof window === "undefined") return;
+    const next = !alignmentMode;
+    setAlignmentMode(next);
+    window.localStorage.setItem("tanakh_alignment_mode", next ? "1" : "0");
+    window.dispatchEvent(new Event("tanakh-alignment-mode-change"));
   };
 
   // translation toggle moved to floating control on Tanakh pages
@@ -434,6 +448,18 @@ export default function Header({
           </form>
           {showTranslationToggle && (
             <div className="header-translation-inline d-flex align-items-center">
+              {isTanakh && (
+                <button
+                  type="button"
+                  className={`btn btn-sm mr-2 ${
+                    alignmentMode ? "btn-info" : "btn-outline-secondary"
+                  }`}
+                  onClick={toggleAlignmentMode}
+                  title="Toggle Hebrew/KJV alignment highlights"
+                >
+                  Link colors
+                </button>
+              )}
               <TranslationToggle />
               <Link
                 className="small text-muted mb-0 ml-2 show-translations-link"
@@ -535,12 +561,26 @@ export default function Header({
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-lg-none">
             {showTranslationToggle && (
               <div className="form-group d-flex align-items-center justify-content-between mb-3">
-                <Link
-                  className="small text-muted mb-0 show-translations-link"
-                  href="/settings"
-                >
-                  Translations
-                </Link>
+                <div className="d-flex align-items-center">
+                  <Link
+                    className="small text-muted mb-0 show-translations-link mr-2"
+                    href="/settings"
+                  >
+                    Translations
+                  </Link>
+                  {isTanakh && (
+                    <button
+                      type="button"
+                      className={`btn btn-sm mr-2 ${
+                        alignmentMode ? "btn-info" : "btn-outline-secondary"
+                      }`}
+                      onClick={toggleAlignmentMode}
+                      title="Toggle Hebrew/KJV alignment highlights"
+                    >
+                      Link colors
+                    </button>
+                  )}
+                </div>
                 <TranslationToggle />
               </div>
             )}
