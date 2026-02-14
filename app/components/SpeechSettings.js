@@ -148,18 +148,6 @@ export default function SpeechSettings({
 
   return (
     <>
-      {!inline && (
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary speech-settings-toggle"
-          onClick={() => setOpen((prev) => !prev)}
-          aria-label="Speech settings"
-          title="Speech settings"
-        >
-          <i className="bi bi-gear" />
-        </button>
-      )}
-
       {open && (
         <div
           className={

@@ -36,21 +36,31 @@ export async function generateMetadata({ params }) {
   }
 }
 
-function Verse({ verse, selectedSuraNumber, translations = [] }) {
+function getWordText(word) {
   return (
-    <span
-      className="toHover mb-3"
+    word.wordText ||
+    (word.conversion &&
+      word.conversion.lettersArray &&
+      word.conversion.lettersArray.map((letter) => letter.unicode).join("")) ||
+    (word.conversion && word.conversion.arabicScript) ||
+    word.displayText ||
+    ""
+  );
+}
+
+function Verse({ verse, selectedSuraNumber, translations = [] }) {
+  const verseText = (verse.words || [])
+    .map((word) => getWordText(word))
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div
+      className="toHover mb-3 d-block"
       id={`verse-${verse.verseNumber}`}
       data-verse-ref={`${selectedSuraNumber}:${verse.verseNumber}`}
     >
-      {verse.words.map((word, idx) => {
-        const wordText =
-          word.wordText ||
-          (word.conversion &&
-            word.conversion.lettersArray &&
-            word.conversion.lettersArray.map((letter) => letter.unicode).join("")) ||
-          (word.conversion && word.conversion.arabicScript) ||
-          word.displayText;
+      {(verse.words || []).map((word, idx) => {
+        const wordText = getWordText(word);
 
         if (!wordText) {
           return null;
@@ -73,10 +83,11 @@ function Verse({ verse, selectedSuraNumber, translations = [] }) {
       <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
         {verse.verseNumber}
       </span>
-      <span className="d-block mt-2">
+      <div className="d-flex align-items-start mt-2">
+        <CopyHebrew text={verseText} />
         <VerseTranslations translations={translations} />
-      </span>
-    </span>
+      </div>
+    </div>
   );
 }
 
@@ -137,7 +148,7 @@ export default async function SuraPage({ params }) {
         id="quranCard"
         style={{ backgroundColor: "#f7f2d1" }}
       >
-        <p className="card-text quran-verse">
+        <div className="card-text quran-verse">
           {versesArray.map((verse) => (
             <Verse
               key={verse.id}
@@ -146,7 +157,7 @@ export default async function SuraPage({ params }) {
               translations={translationsByVerse?.[verse.verseNumber] || []}
               />
             ))}
-          </p>
+          </div>
         </div>
       </div>
 
@@ -180,3 +191,4 @@ export default async function SuraPage({ params }) {
 import Header from "../components/Header";
 import VerseTranslations from "../components/VerseTranslations";
 import QuranProgress from "../components/QuranProgress";
+import CopyHebrew from "../components/CopyHebrew";

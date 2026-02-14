@@ -469,6 +469,11 @@ export default function Header({
               </Link>
             </div>
           )}
+          <div className="ml-auto">
+            <Link className="small text-muted mb-0" href="/contact">
+              Contact
+            </Link>
+          </div>
         </div>
 
       <div className="collapse navbar-collapse" id="navbarContent" dir="rtl">
@@ -698,6 +703,11 @@ export default function Header({
               {searchLoading ? "..." : "Search"}
             </button>
           </form>
+        </div>
+        <div className="d-lg-none mb-3">
+          <Link className="small text-muted" href="/contact">
+            Contact
+          </Link>
         </div>
       </div>
     </nav>
