@@ -1,8 +1,18 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
-async function fetchRoot(wordPosition) {
-  const res = await fetch(`${API_BASE}/quran/word-root/${wordPosition}`, {
+function toPositiveInt(value, fallback) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(0, Math.floor(num));
+}
+
+async function fetchRoot(wordPosition, { offset = 0, limit = 50 } = {}) {
+  const query = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  const res = await fetch(`${API_BASE}/quran/word-root/${wordPosition}?${query.toString()}`, {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -14,7 +24,7 @@ async function fetchRoot(wordPosition) {
 export async function generateMetadata({ params }) {
   const { wordPosition } = params;
   try {
-    const data = await fetchRoot(wordPosition);
+    const data = await fetchRoot(wordPosition, { offset: 0, limit: 1 });
     return {
       title: `${data.title} - ${wordPosition}`,
     };
@@ -23,9 +33,15 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function WordRootPage({ params }) {
+export default async function WordRootPage({ params, searchParams }) {
   const { wordPosition } = params;
-  const data = await fetchRoot(wordPosition);
+  const offset = toPositiveInt(searchParams?.offset, 0);
+  const parsedLimit = toPositiveInt(searchParams?.limit, 50);
+  const limit = Math.min(Math.max(parsedLimit || 50, 1), 1000);
+  const data = await fetchRoot(wordPosition, { offset, limit });
+  const prevOffset = Math.max(0, data.offset - data.limit);
+  const showingStart = data.totalMatches ? data.offset + 1 : 0;
+  const showingEnd = data.offset + data.returned;
 
   return (
     <div className="container py-3">
@@ -75,6 +91,29 @@ export default async function WordRootPage({ params }) {
           </div>
         );
       })}
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4">
+        <div className="text-muted">
+          {`Showing ${showingStart}-${showingEnd} of ${data.totalMatches}`}
+        </div>
+        <div className="d-flex gap-2">
+          {data.offset > 0 ? (
+            <a
+              className="btn btn-outline-secondary btn-sm"
+              href={`/word-root/${wordPosition}?offset=${prevOffset}&limit=${data.limit}`}
+            >
+              Previous
+            </a>
+          ) : null}
+          {data.hasMore ? (
+            <a
+              className="btn btn-primary btn-sm"
+              href={`/word-root/${wordPosition}?offset=${data.offset + data.returned}&limit=${data.limit}`}
+            >
+              Next
+            </a>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
