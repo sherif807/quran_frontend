@@ -131,12 +131,21 @@ const highlight = (text, query, corpus) => {
   return result;
 };
 
-async function fetchTextSearch({ query, scope, translationIds }) {
-  if (!query) return { ok: false, results: [] };
+async function fetchTextSearch({
+  query,
+  scope,
+  offset = 0,
+  limit = 50,
+  translationIds,
+}) {
+  if (!query) return { ok: false, results: [], offset: 0, limit: 50, returned: 0, hasMore: false };
+  const safeOffset = Math.max(0, Number(offset) || 0);
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 50);
   const params = new URLSearchParams({
     q: query,
     scope: scope || "quran",
-    limit: "100",
+    limit: String(safeLimit),
+    offset: String(safeOffset),
   });
   if (translationIds) {
     params.set("translations", translationIds);
@@ -229,6 +238,9 @@ async function fetchSuraNameTranslations(lang) {
 export default async function SearchTextPage({ searchParams }) {
   const query = String(searchParams?.q || "").trim();
   const scope = String(searchParams?.scope || "quran").toLowerCase();
+  const offset = Math.max(0, Number(searchParams?.offset || 0));
+  const requestedLimit = Number(searchParams?.limit || 50);
+  const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 50, 1), 50);
   const translationLang = getTranslationLang();
   const bibleTranslationIds = getBibleTranslationIds();
   const suraNameTranslations = await fetchSuraNameTranslations(translationLang);
@@ -241,12 +253,26 @@ export default async function SearchTextPage({ searchParams }) {
       data = await fetchTextSearch({
         query,
         scope,
+        offset,
+        limit,
         translationIds: bibleTranslationIds,
       });
     } catch (err) {
       error = err?.message || "Search failed.";
     }
   }
+
+  const currentOffset = Number.isFinite(Number(data.offset)) ? Number(data.offset) : offset;
+  const currentLimit = Number.isFinite(Number(data.limit)) ? Number(data.limit) : limit;
+  const returned = Number.isFinite(Number(data.returned))
+    ? Number(data.returned)
+    : (data.results || []).length;
+  const showingStart = data.results?.length ? currentOffset + 1 : 0;
+  const showingEnd = currentOffset + returned;
+  const prevOffset = Math.max(0, currentOffset - currentLimit);
+  const totalMatches = Number.isFinite(Number(data.totalMatches))
+    ? Number(data.totalMatches)
+    : showingEnd;
 
   return (
     <div className="py-3">
@@ -269,6 +295,32 @@ export default async function SearchTextPage({ searchParams }) {
       {error && <div className="alert alert-danger">{error}</div>}
       {!error && query && data.ok && data.results.length === 0 && (
         <div className="alert alert-warning">No results found.</div>
+      )}
+
+      {!error && query && data.ok && data.results.length > 0 && (
+        <div className="d-flex flex-wrap align-items-center justify-content-between mb-3">
+          <div className="small text-muted">
+            {`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}
+          </div>
+          <div className="d-flex gap-2">
+            {currentOffset > 0 ? (
+              <a
+                className="btn btn-outline-secondary btn-sm"
+                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+              >
+                Previous
+              </a>
+            ) : null}
+            {data.hasMore ? (
+              <a
+                className="btn btn-primary btn-sm"
+                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+              >
+                Next
+              </a>
+            ) : null}
+          </div>
+        </div>
       )}
 
       {data.results.map((item, idx) => {
@@ -333,9 +385,14 @@ export default async function SearchTextPage({ searchParams }) {
                       </span>
                     );
                   })}
-                  <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
-                    {item.verseNumber}
-                  </span>
+                  <a
+                    href={`/${item.suraId}#verse-${item.verseNumber}`}
+                    className="text-decoration-none"
+                  >
+                    <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
+                      {item.suraId}:{item.verseNumber}
+                    </span>
+                  </a>
                 </div>
               )}
 
@@ -408,6 +465,32 @@ export default async function SearchTextPage({ searchParams }) {
           </div>
         );
       })}
+
+      {!error && query && data.ok && data.results.length > 0 && (
+        <div className="d-flex flex-wrap align-items-center justify-content-between mt-3">
+          <div className="small text-muted">
+            {`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}
+          </div>
+          <div className="d-flex gap-2">
+            {currentOffset > 0 ? (
+              <a
+                className="btn btn-outline-secondary btn-sm"
+                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+              >
+                Previous
+              </a>
+            ) : null}
+            {data.hasMore ? (
+              <a
+                className="btn btn-primary btn-sm"
+                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+              >
+                Next
+              </a>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

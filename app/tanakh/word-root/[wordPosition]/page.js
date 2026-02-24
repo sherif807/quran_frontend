@@ -73,6 +73,29 @@ export default async function TanakhRootPage({ params, searchParams }) {
         section="tanakh"
       />
       <h3 className="mb-4">{data.title}</h3>
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div className="text-muted">
+          {`Showing ${showingStart}-${showingEnd} of ${data.totalMatches}`}
+        </div>
+        <div className="d-flex gap-2">
+          {data.offset > 0 ? (
+            <a
+              className="btn btn-outline-secondary btn-sm"
+              href={`/tanakh/word-root/${encodeURIComponent(wordPosition)}?offset=${prevOffset}&limit=${data.limit}`}
+            >
+              Previous
+            </a>
+          ) : null}
+          {data.hasMore ? (
+            <a
+              className="btn btn-primary btn-sm"
+              href={`/tanakh/word-root/${encodeURIComponent(wordPosition)}?offset=${data.offset + data.returned}&limit=${data.limit}`}
+            >
+              Next
+            </a>
+          ) : null}
+        </div>
+      </div>
       {Object.entries(data.verseArray || {}).map(([book, chapters]) =>
         Object.entries(chapters).map(([chapter, verses]) =>
           Object.entries(verses).map(([verseNum, verseProps]) => (

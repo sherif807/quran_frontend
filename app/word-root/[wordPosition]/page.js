@@ -7,11 +7,17 @@ function toPositiveInt(value, fallback) {
   return Math.max(0, Math.floor(num));
 }
 
-async function fetchRoot(wordPosition, { offset = 0, limit = 50 } = {}) {
+async function fetchRoot(
+  wordPosition,
+  { offset = 0, limit = 50, translation = "" } = {}
+) {
   const query = new URLSearchParams({
     offset: String(offset),
     limit: String(limit),
   });
+  if (translation) {
+    query.set("translation", translation);
+  }
   const res = await fetch(`${API_BASE}/quran/word-root/${wordPosition}?${query.toString()}`, {
     cache: "no-store",
   });
@@ -35,18 +41,47 @@ export async function generateMetadata({ params }) {
 
 export default async function WordRootPage({ params, searchParams }) {
   const { wordPosition } = params;
+  const { cookies } = await import("next/headers");
+  const translationCookie = cookies().get("quran_translations")?.value || "";
   const offset = toPositiveInt(searchParams?.offset, 0);
   const parsedLimit = toPositiveInt(searchParams?.limit, 50);
   const limit = Math.min(Math.max(parsedLimit || 50, 1), 1000);
-  const data = await fetchRoot(wordPosition, { offset, limit });
+  const data = await fetchRoot(wordPosition, {
+    offset,
+    limit,
+    translation: translationCookie,
+  });
   const prevOffset = Math.max(0, data.offset - data.limit);
   const showingStart = data.totalMatches ? data.offset + 1 : 0;
   const showingEnd = data.offset + data.returned;
 
   return (
     <div className="container py-3">
-      <Header allSuras={data.allSuras} section="quran" />
+      <Header allSuras={data.allSuras} section="quran" showTranslationToggle />
       <h3 className="mb-4">{data.title}</h3>
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div className="text-muted">
+          {`Showing ${showingStart}-${showingEnd} of ${data.totalMatches}`}
+        </div>
+        <div className="d-flex gap-2">
+          {data.offset > 0 ? (
+            <a
+              className="btn btn-outline-secondary btn-sm"
+              href={`/word-root/${wordPosition}?offset=${prevOffset}&limit=${data.limit}`}
+            >
+              Previous
+            </a>
+          ) : null}
+          {data.hasMore ? (
+            <a
+              className="btn btn-primary btn-sm"
+              href={`/word-root/${wordPosition}?offset=${data.offset + data.returned}&limit=${data.limit}`}
+            >
+              Next
+            </a>
+          ) : null}
+        </div>
+      </div>
       {data.versesArray.map((verse) => {
         const suraMeta = data.allSuras[verse.suraNumber];
         return (
@@ -59,8 +94,8 @@ export default async function WordRootPage({ params, searchParams }) {
               className="card-header d-block text-decoration-none text-dark"
             >
               {suraMeta
-                ? `${suraMeta.name} ${verse.verseNumber}`
-                : verse.verseNumber}
+                ? `${suraMeta.name} ${verse.suraNumber}:${verse.verseNumber}`
+                : `${verse.suraNumber}:${verse.verseNumber}`}
             </a>
             <div className="card-body toHover" style={{ backgroundColor: "#f7f2d1" }}>
             {verse.words.map((word) => {
@@ -87,6 +122,20 @@ export default async function WordRootPage({ params, searchParams }) {
                 </span>
               );
             })}
+            <a
+              href={`/${verse.suraNumber}#verse-${verse.verseNumber}`}
+              className="text-decoration-none"
+            >
+              <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
+                {verse.suraNumber}:{verse.verseNumber}
+              </span>
+            </a>
+            <VerseTranslations
+              translations={
+                data.translationsByRef?.[`${verse.suraNumber}:${verse.verseNumber}`] ||
+                []
+              }
+            />
             </div>
           </div>
         );
@@ -118,3 +167,4 @@ export default async function WordRootPage({ params, searchParams }) {
   );
 }
 import Header from "../../components/Header";
+import VerseTranslations from "../../components/VerseTranslations";
