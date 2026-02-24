@@ -7,6 +7,14 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
 
 export const revalidate = 0;
+export const metadata = {
+  title: "Scripture Search",
+  description:
+    "Search across Quran Arabic text, Tanakh Hebrew text, and Gospel Greek text in English, Arabic, Hebrew, and Greek with language-aware matching on QuranAlive.",
+  alternates: {
+    canonical: "/search-text",
+  },
+};
 
 const escapeHtml = (value) =>
   String(value || "")

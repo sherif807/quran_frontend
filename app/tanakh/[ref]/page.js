@@ -33,11 +33,31 @@ async function fetchTanakh(ref) {
 
 export async function generateMetadata({ params }) {
   const ref = decodeURIComponent(params.ref || "GEN 1");
+  const canonicalRef = encodeURIComponent(ref);
   try {
     const data = await fetchTanakh(ref);
-    return { title: data.title || ref };
+    const title = data.title || ref;
+    const description = `Read ${title} from the Tanakh in original Hebrew on QuranAlive, and click any word for lemma lookup, translation matching, and listening tools.`;
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: `/tanakh/${canonicalRef}`,
+      },
+      openGraph: {
+        title,
+        description,
+        url: `/tanakh/${canonicalRef}`,
+      },
+    };
   } catch (e) {
-    return { title: ref };
+    return {
+      title: ref,
+      description: `Read ${ref} from the Tanakh on QuranAlive.`,
+      alternates: {
+        canonical: `/tanakh/${canonicalRef}`,
+      },
+    };
   }
 }
 

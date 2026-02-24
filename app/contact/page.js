@@ -2,6 +2,14 @@ import Script from "next/script";
 import Header from "../components/Header";
 import ContactForm from "./ContactForm";
 
+export const metadata = {
+  title: "Contact",
+  description: "Contact QuranAlive for questions, feedback, or collaboration.",
+  alternates: {
+    canonical: "/contact",
+  },
+};
+
 export default function ContactPage() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   return (

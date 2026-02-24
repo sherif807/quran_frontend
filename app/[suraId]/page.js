@@ -26,12 +26,27 @@ export async function generateMetadata({ params }) {
   try {
     const data = await fetchSuraData(suraId);
     const { selectedSura } = data;
+    const title = `${selectedSura.number} - ${selectedSura.name}`;
+    const description = `Read Surah ${selectedSura.number} (${selectedSura.name}) in original Arabic on QuranAlive, and click any word for root lookup, translation matching, and audio tools.`;
     return {
-      title: `${selectedSura.number} - ${selectedSura.name}`,
+      title,
+      description,
+      alternates: {
+        canonical: `/${selectedSura.number}`,
+      },
+      openGraph: {
+        title,
+        description,
+        url: `/${selectedSura.number}`,
+      },
     };
   } catch (e) {
     return {
-      title: `سورة ${suraId}`,
+      title: `Surah ${suraId}`,
+      description: `Read Surah ${suraId} on QuranAlive.`,
+      alternates: {
+        canonical: `/${suraId}`,
+      },
     };
   }
 }

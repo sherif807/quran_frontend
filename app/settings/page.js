@@ -6,6 +6,11 @@ import BackButton from "../components/BackButton";
 
 export const metadata = {
   title: "Settings",
+  description:
+    "Manage QuranAlive settings for translations, interlinear alignment, and speech preferences.",
+  alternates: {
+    canonical: "/settings",
+  },
 };
 
 const normalizeSection = (raw) => {

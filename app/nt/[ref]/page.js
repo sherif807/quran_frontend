@@ -31,11 +31,31 @@ async function fetchNt(ref) {
 
 export async function generateMetadata({ params }) {
   const ref = decodeURIComponent(params.ref || "MT 1");
+  const canonicalRef = encodeURIComponent(ref);
   try {
     const data = await fetchNt(ref);
-    return { title: data.title || ref };
+    const title = data.title || ref;
+    const description = `Read ${title} from the Gospel/New Testament in original Greek on QuranAlive, and click any word for lemma lookup, translation matching, and listening tools.`;
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: `/nt/${canonicalRef}`,
+      },
+      openGraph: {
+        title,
+        description,
+        url: `/nt/${canonicalRef}`,
+      },
+    };
   } catch (e) {
-    return { title: ref };
+    return {
+      title: ref,
+      description: `Read ${ref} from the Gospel/New Testament on QuranAlive.`,
+      alternates: {
+        canonical: `/nt/${canonicalRef}`,
+      },
+    };
   }
 }
 
