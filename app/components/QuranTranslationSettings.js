@@ -73,9 +73,15 @@ const getEditionLabel = (translation) => {
   return name || code.toUpperCase();
 };
 
+const normalizeSelection = (codes) =>
+  [...new Set((codes || []).map((c) => String(c || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+    .join("|");
+
 export default function QuranTranslationSettings() {
   const [translations, setTranslations] = useState([]);
   const [selected, setSelected] = useState([]);
+  const [savedSelection, setSavedSelection] = useState([]);
   const [activeLanguage, setActiveLanguage] = useState("");
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -94,6 +100,7 @@ export default function QuranTranslationSettings() {
       : [];
     initialSelectionRef.current = initial;
     setSelected(initial);
+    setSavedSelection(initial);
   }, []);
 
   useEffect(() => {
@@ -107,6 +114,7 @@ export default function QuranTranslationSettings() {
           const hasEn = list.find((t) => t.languageCode === "en");
           if (hasEn) {
             setSelected(["en"]);
+            setSavedSelection(["en"]);
             persistSelection(["en"]);
           }
         }
@@ -192,6 +200,11 @@ export default function QuranTranslationSettings() {
     return counts;
   }, [groupedOptions, selected]);
 
+  const hasChanges = useMemo(
+    () => normalizeSelection(selected) !== normalizeSelection(savedSelection),
+    [selected, savedSelection]
+  );
+
   const toggle = (code) => {
     setSelected((prev) => {
       const next = prev.includes(code)
@@ -204,6 +217,7 @@ export default function QuranTranslationSettings() {
 
   const save = () => {
     persistSelection(selected);
+    setSavedSelection(selected);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("quran_translations_dirty", "1");
     }
@@ -291,7 +305,7 @@ export default function QuranTranslationSettings() {
                 type="button"
                 className="btn btn-sm btn-primary"
                 onClick={save}
-                disabled={selected.length === 0}
+                disabled={!hasChanges || selected.length === 0}
               >
                 Save
               </button>
@@ -301,9 +315,6 @@ export default function QuranTranslationSettings() {
             </div>
           </>
         )}
-        <small className="text-muted d-block mt-2">
-          Changes apply when you go back to Quran pages.
-        </small>
       </div>
     </div>
   );
