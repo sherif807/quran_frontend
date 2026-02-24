@@ -183,18 +183,14 @@ export default function QuranTranslationSettings() {
     return groupedOptions.find((group) => group.languageLabel === activeLanguage) || null;
   }, [groupedOptions, activeLanguage]);
 
-  const selectedOptions = useMemo(() => {
-    if (!selected.length || !groupedOptions.length) return [];
-    const allOptions = groupedOptions.flatMap((group) =>
-      group.items.map((item) => ({
-        ...item,
-        languageLabel: group.languageLabel,
-      }))
-    );
-    return selected
-      .map((code) => allOptions.find((item) => item.code === code))
-      .filter(Boolean);
-  }, [selected, groupedOptions]);
+  const selectedCountByLanguage = useMemo(() => {
+    const counts = new Map();
+    groupedOptions.forEach((group) => {
+      const count = group.items.filter((item) => selected.includes(item.code)).length;
+      counts.set(group.languageLabel, count);
+    });
+    return counts;
+  }, [groupedOptions, selected]);
 
   const toggle = (code) => {
     setSelected((prev) => {
@@ -258,6 +254,11 @@ export default function QuranTranslationSettings() {
                         }}
                       >
                         {group.languageLabel}
+                        {(selectedCountByLanguage.get(group.languageLabel) || 0) > 0 && (
+                          <span className="float-right">
+                            ✓ {selectedCountByLanguage.get(group.languageLabel)}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -296,21 +297,6 @@ export default function QuranTranslationSettings() {
               </button>
               {saved && (
                 <span className="small text-muted ml-2">Saved</span>
-              )}
-            </div>
-
-            <div className="mt-3 pt-2 border-top">
-              <div className="small text-muted mb-1">Selected translations</div>
-              {selectedOptions.length ? (
-                <div>
-                  {selectedOptions.map((opt) => (
-                    <div key={opt.code} className="small mb-1">
-                      {opt.languageLabel}: {opt.editionLabel}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="small text-muted">None selected</div>
               )}
             </div>
           </>
