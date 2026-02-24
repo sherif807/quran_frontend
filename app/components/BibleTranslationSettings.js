@@ -90,6 +90,8 @@ export default function BibleTranslationSettings() {
   const save = () => {
     persistSelection(selected);
     if (typeof window !== "undefined") {
+      window.localStorage.setItem("show-translations", "1");
+      document.documentElement.classList.remove("hide-translations");
       window.sessionStorage.setItem("bible_translations_dirty", "1");
     }
     setSaved(true);

@@ -110,14 +110,6 @@ export default function QuranTranslationSettings() {
       .then((data) => {
         const list = data.translations || [];
         setTranslations(list);
-        if (initialSelectionRef.current.length === 0) {
-          const hasEn = list.find((t) => t.languageCode === "en");
-          if (hasEn) {
-            setSelected(["en"]);
-            setSavedSelection(["en"]);
-            persistSelection(["en"]);
-          }
-        }
       })
       .catch(() => setError("Could not load Quran translations."))
       .finally(() => setLoading(false));
@@ -166,12 +158,8 @@ export default function QuranTranslationSettings() {
       return;
     }
 
-    const selectedGroup = groupedOptions.find((group) =>
-      group.items.some((item) => selected.includes(item.code))
-    );
-    setActiveLanguage(
-      selectedGroup ? selectedGroup.languageLabel : groupedOptions[0].languageLabel
-    );
+    // Keep language unselected until the user explicitly picks one.
+    setActiveLanguage("");
   }, [groupedOptions, activeLanguage, selected]);
 
   useEffect(() => {
@@ -219,6 +207,8 @@ export default function QuranTranslationSettings() {
     persistSelection(selected);
     setSavedSelection(selected);
     if (typeof window !== "undefined") {
+      window.localStorage.setItem("show-translations", "1");
+      document.documentElement.classList.remove("hide-translations");
       window.sessionStorage.setItem("quran_translations_dirty", "1");
     }
     setSaved(true);

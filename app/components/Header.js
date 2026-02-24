@@ -492,10 +492,10 @@ export default function Header({
               )}
               <TranslationToggle />
               <Link
-                className="small text-muted mb-0 ml-2 show-translations-link"
+                className="btn btn-sm btn-outline-secondary ml-2 show-translations-link"
                 href={settingsHref}
               >
-                Translations
+                Translation settings
               </Link>
             </div>
           )}
@@ -598,10 +598,10 @@ export default function Header({
               <div className="form-group d-flex align-items-center justify-content-between mb-3">
                 <div className="d-flex align-items-center">
                   <Link
-                    className="small text-muted mb-0 show-translations-link mr-2"
+                    className="btn btn-sm btn-outline-secondary show-translations-link mr-2"
                     href={settingsHref}
                   >
-                    Translations
+                    Translation settings
                   </Link>
                   {isTanakh && (
                     <button
@@ -706,10 +706,10 @@ export default function Header({
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-md-none">
             <div className="form-group d-flex align-items-center justify-content-between mb-0">
               <Link
-                className="small text-muted mb-0 show-translations-link"
+                className="btn btn-sm btn-outline-secondary show-translations-link"
                 href={settingsHref}
               >
-                Translations
+                Translation settings
               </Link>
               <TranslationToggle />
             </div>
