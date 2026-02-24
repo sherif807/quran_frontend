@@ -80,7 +80,7 @@ export default function VerseTranslations({
   if (!translations || translations.length === 0) return null;
 
   return (
-    <span className="ml-1 translation-container mt-2">
+    <div className="ml-1 translation-container mt-2">
       {sortedTranslations.map((t, idx) => (
         alignmentMode && Array.isArray(t.alignments) && t.alignments.length && !hasHtml(t.translationText) ? (
           <span
@@ -105,6 +105,6 @@ export default function VerseTranslations({
           />
         )
       ))}
-    </span>
+    </div>
   );
 }

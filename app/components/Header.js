@@ -17,6 +17,15 @@ const readCookie = (key) => {
   return match ? decodeURIComponent(match.split("=")[1]) : "";
 };
 
+const getReadableTranslationName = (translation, code) => {
+  const rawName = String(translation?.name || "").trim();
+  if (rawName) {
+    const openParen = rawName.indexOf(" (");
+    return openParen > 0 ? rawName.slice(0, openParen).trim() : rawName;
+  }
+  return "";
+};
+
 export default function Header({
   allSuras = {},
   selectedSuraNumber,
@@ -58,6 +67,8 @@ export default function Header({
   const isTanakh = resolvedSection
     ? resolvedSection === "tanakh"
     : pathname && pathname.startsWith("/tanakh");
+  const settingsSection = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
+  const settingsHref = `/settings?section=${settingsSection}`;
   const readerBasePath = isNt ? "/nt" : "/tanakh";
 
   const handleSuraChange = (e) => {
@@ -131,22 +142,32 @@ export default function Header({
       : "";
     if (!firstCode) {
       setTranslationName("");
+      setSuraNameTranslations({});
       return;
     }
 
-    fetch(`${API_BASE}/quran/sura-names?lang=${encodeURIComponent(firstCode)}`, {
-      cache: "no-store",
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
-        setSuraNameTranslations(data.names || {});
-        setTranslationName(firstCode.toUpperCase());
+    Promise.all([
+      fetch(`${API_BASE}/quran/sura-names?lang=${encodeURIComponent(firstCode)}`, {
+        cache: "no-store",
+      }),
+      fetch(`${API_BASE}/quran/translations`, { cache: "no-store" }),
+    ])
+      .then(async ([namesRes, translationsRes]) => {
+        const namesData = namesRes.ok ? await namesRes.json() : { names: {} };
+        const translationsData = translationsRes.ok
+          ? await translationsRes.json()
+          : { translations: [] };
+        const match = (translationsData.translations || []).find(
+          (t) => t.languageCode === firstCode
+        );
+        setSuraNameTranslations(namesData.names || {});
+        setTranslationName(getReadableTranslationName(match, firstCode));
       })
       .catch(() => {
         setSuraNameTranslations({});
-        setTranslationName(firstCode.toUpperCase());
+        setTranslationName(getReadableTranslationName(null, firstCode));
       });
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -472,7 +493,7 @@ export default function Header({
               <TranslationToggle />
               <Link
                 className="small text-muted mb-0 ml-2 show-translations-link"
-                href="/settings"
+                href={settingsHref}
               >
                 Translations
               </Link>
@@ -578,7 +599,7 @@ export default function Header({
                 <div className="d-flex align-items-center">
                   <Link
                     className="small text-muted mb-0 show-translations-link mr-2"
-                    href="/settings"
+                    href={settingsHref}
                   >
                     Translations
                   </Link>
@@ -686,7 +707,7 @@ export default function Header({
             <div className="form-group d-flex align-items-center justify-content-between mb-0">
               <Link
                 className="small text-muted mb-0 show-translations-link"
-                href="/settings"
+                href={settingsHref}
               >
                 Translations
               </Link>

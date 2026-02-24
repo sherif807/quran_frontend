@@ -83,7 +83,7 @@ function Verse({ verse, selectedSuraNumber, translations = [] }) {
       <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
         {verse.verseNumber}
       </span>
-      <div className="d-flex align-items-start mt-2">
+      <div className="d-flex flex-wrap align-items-start mt-2">
         <CopyHebrew text={verseText} />
         <VerseTranslations translations={translations} />
       </div>
