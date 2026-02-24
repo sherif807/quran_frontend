@@ -90,6 +90,15 @@ export default function Header({
     }
   }, [router]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dirty = window.sessionStorage.getItem("quran_translations_dirty");
+    if (dirty) {
+      window.sessionStorage.removeItem("quran_translations_dirty");
+      router.refresh();
+    }
+  }, [router]);
+
   const toggleDarkMode = () => {
     const next = !darkMode;
     setDarkMode(next);

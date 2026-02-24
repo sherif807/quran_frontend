@@ -26,6 +26,17 @@ const persistSelection = (codes) => {
   )}; path=/; max-age=31536000`;
 };
 
+const getLanguageLabel = (languageCode) => {
+  const code = String(languageCode || "").trim();
+  if (!code) return "";
+  try {
+    const display = new Intl.DisplayNames(["en"], { type: "language" });
+    return display.of(code) || display.of(code.split("-")[0]) || code;
+  } catch (error) {
+    return code;
+  }
+};
+
 export default function QuranTranslationSettings() {
   const [translations, setTranslations] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -69,6 +80,7 @@ export default function QuranTranslationSettings() {
     return translations.map((t) => ({
       code: t.languageCode,
       name: t.name || t.languageCode.toUpperCase(),
+      languageLabel: getLanguageLabel(t.languageCode),
       direction: t.direction || "ltr",
     }));
   }, [translations]);
@@ -85,6 +97,9 @@ export default function QuranTranslationSettings() {
 
   const save = () => {
     persistSelection(selected);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("quran_translations_dirty", "1");
+    }
     setSaved(true);
   };
 
@@ -115,8 +130,10 @@ export default function QuranTranslationSettings() {
                     onChange={() => toggle(opt.code)}
                   />
                   <span>
-                    {opt.name}{" "}
-                    <span className="text-muted">({opt.code})</span>
+                    {opt.name}
+                    {opt.languageLabel ? (
+                      <span className="text-muted"> ({opt.languageLabel})</span>
+                    ) : null}
                   </span>
                 </label>
               ))}
@@ -137,7 +154,7 @@ export default function QuranTranslationSettings() {
           </>
         )}
         <small className="text-muted d-block mt-2">
-          Refresh the Quran page after changing selections.
+          Changes apply when you go back to Quran pages.
         </small>
       </div>
     </div>
