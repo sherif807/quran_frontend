@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
+import { useEffect, useState } from "react";
 
 const DEFAULT_STORAGE_KEY = "hebrew_tts_settings";
 
 const defaultSettings = {
-  provider: "browser",
-  voice: "",
   language: "he-IL",
   rate: 1.0,
   pitch: 0.0,
@@ -46,9 +41,6 @@ export default function SpeechSettings({
   });
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [voices, setVoices] = useState([]);
-  const [loadingVoices, setLoadingVoices] = useState(false);
-  const [voiceError, setVoiceError] = useState("");
   const [previewText, setPreviewText] = useState(defaultPreviewText);
   const [previewing, setPreviewing] = useState(false);
 
@@ -71,78 +63,22 @@ export default function SpeechSettings({
     persistSettings(storageKey, settings);
   }, [settings, loaded, storageKey]);
 
-  const loadVoices = async () => {
-    setLoadingVoices(true);
-    setVoiceError("");
-    try {
-      const res = await fetch(
-        `${API_BASE}/tts/voices?language=${encodeURIComponent(
-          defaultLanguage
-        )}`,
-        { cache: "no-store" }
-      );
-      if (!res.ok) throw new Error("Failed to load voices");
-      const data = await res.json();
-      setVoices(data.voices || []);
-    } catch (err) {
-      console.error("Voice list load failed", err);
-      setVoices([]);
-      setVoiceError("Could not load voices. Is the backend running?");
-    } finally {
-      setLoadingVoices(false);
-    }
-  };
-
-  const voiceOptions = useMemo(() => {
-    return voices
-      .map((voice) => ({
-        name: voice.name,
-        label: `${voice.name} (${voice.ssmlGender || "UNSPECIFIED"})`,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [voices]);
-
-
-  useEffect(() => {
-    if (settings.provider !== "google") return;
-    if (voices.length > 0) return;
-    loadVoices();
-  }, [settings.provider, defaultLanguage]);
-
   const preview = async () => {
     if (!previewText) return;
-    if (settings.provider === "browser") {
-      if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    try {
+      setPreviewing(true);
       const utter = new SpeechSynthesisUtterance(previewText);
       utter.lang = defaultLanguage;
       utter.rate = Number(settings.rate) || 1.0;
       utter.pitch = Number(settings.pitch) || 0.0;
+      utter.onend = () => setPreviewing(false);
+      utter.onerror = () => setPreviewing(false);
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utter);
-      return;
-    }
-
-    try {
-      setPreviewing(true);
-      const res = await fetch(`${API_BASE}/tts/speak`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: previewText,
-          voice: settings.voice || "",
-          language: defaultLanguage,
-          rate: Number(settings.rate) || 1.0,
-          pitch: Number(settings.pitch) || 0.0,
-        }),
-      });
-      if (!res.ok) throw new Error("Preview failed");
-      const data = await res.json();
-      const audio = new Audio(`data:audio/mpeg;base64,${data.audio_base64}`);
-      audio.play();
     } catch (err) {
-      console.error("Preview failed", err);
-    } finally {
       setPreviewing(false);
+      console.error("Preview failed", err);
     }
   };
 
@@ -172,101 +108,44 @@ export default function SpeechSettings({
             </div>
 
             <div className="form-group mb-2">
-              <label className="small text-muted mb-1">Voice provider</label>
-              <select
-                className="form-control form-control-sm"
-                value={settings.provider}
+              <label className="small text-muted mb-1">
+                Rate: {settings.rate.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                className="custom-range"
+                min="0.7"
+                max="1.3"
+                step="0.05"
+                value={settings.rate}
                 onChange={(e) =>
                   setSettings((prev) => ({
                     ...prev,
-                    provider: e.target.value,
+                    rate: Number(e.target.value),
                   }))
                 }
-              >
-                <option value="browser">Browser</option>
-                <option value="google">Google</option>
-              </select>
-              <small className="text-muted d-block mt-1">
-                Browser uses your device voice. Google gives higher quality voices.
-              </small>
+              />
             </div>
 
-            {settings.provider === "google" && (
-              <>
-                <div className="form-group mb-2">
-                  <label className="small text-muted mb-1">Google voice</label>
-                  <div className="d-flex">
-                    <select
-                      className="form-control form-control-sm"
-                      value={settings.voice}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          voice: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Default voice</option>
-                      {voiceOptions.map((voice) => (
-                        <option key={voice.name} value={voice.name}>
-                          {voice.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {loadingVoices && (
-                    <small className="text-muted d-block mt-1">
-                      Loading voices...
-                    </small>
-                  )}
-                  {voiceError && (
-                    <small className="text-danger d-block mt-1">
-                      {voiceError}
-                    </small>
-                  )}
-                </div>
-
-                <div className="form-group mb-2">
-                  <label className="small text-muted mb-1">
-                    Rate: {settings.rate.toFixed(2)}
-                  </label>
-                  <input
-                    type="range"
-                    className="custom-range"
-                    min="0.7"
-                    max="1.3"
-                    step="0.05"
-                    value={settings.rate}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        rate: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="form-group mb-0">
-                  <label className="small text-muted mb-1">
-                    Pitch: {settings.pitch.toFixed(1)}
-                  </label>
-                  <input
-                    type="range"
-                    className="custom-range"
-                    min="-4"
-                    max="4"
-                    step="0.5"
-                    value={settings.pitch}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        pitch: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-              </>
-            )}
+            <div className="form-group mb-0">
+              <label className="small text-muted mb-1">
+                Pitch: {settings.pitch.toFixed(1)}
+              </label>
+              <input
+                type="range"
+                className="custom-range"
+                min="-4"
+                max="4"
+                step="0.5"
+                value={settings.pitch}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    pitch: Number(e.target.value),
+                  }))
+                }
+              />
+            </div>
 
             <div className="form-group mt-3 mb-0">
               <label className="small text-muted mb-1">Preview text</label>

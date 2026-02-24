@@ -2,16 +2,11 @@
 
 import { useRef, useState } from "react";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
-
 const DEFAULT_STORAGE_KEY = "hebrew_tts_settings";
 
 const readSettings = (storageKey, fallbackLanguage) => {
   if (typeof window === "undefined") {
     return {
-      provider: "browser",
-      voice: "",
       language: fallbackLanguage || "he-IL",
       rate: 1.0,
       pitch: 0.0,
@@ -21,8 +16,6 @@ const readSettings = (storageKey, fallbackLanguage) => {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) {
       return {
-        provider: "browser",
-        voice: "",
         language: fallbackLanguage || "he-IL",
         rate: 1.0,
         pitch: 0.0,
@@ -30,8 +23,6 @@ const readSettings = (storageKey, fallbackLanguage) => {
     }
     const parsed = JSON.parse(raw);
     return {
-      provider: "browser",
-      voice: "",
       language: fallbackLanguage || "he-IL",
       rate: 1.0,
       pitch: 0.0,
@@ -39,8 +30,6 @@ const readSettings = (storageKey, fallbackLanguage) => {
     };
   } catch (err) {
     return {
-      provider: "browser",
-      voice: "",
       language: fallbackLanguage || "he-IL",
       rate: 1.0,
       pitch: 0.0,
@@ -90,43 +79,6 @@ export default function PlayHebrew({
     window.speechSynthesis.speak(utter);
   };
 
-  const speakGoogle = async () => {
-    const settings = readSettings(storageKey, defaultLanguage);
-    const payload = {
-      text,
-      voice: settings.voice || "",
-      language: defaultLanguage,
-      rate: Number(settings.rate) || 1.0,
-      pitch: Number(settings.pitch) || 0.0,
-    };
-
-    try {
-      setSpeaking(true);
-      const res = await fetch(`${API_BASE}/tts/speak`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Google TTS failed");
-      const data = await res.json();
-      const audio = new Audio(`data:audio/mpeg;base64,${data.audio_base64}`);
-      audioRef.current = audio;
-      audio.onended = () => {
-        setSpeaking(false);
-        audioRef.current = null;
-      };
-      audio.onerror = () => {
-        setSpeaking(false);
-        audioRef.current = null;
-      };
-      audio.play();
-    } catch (err) {
-      console.error("Google TTS error", err);
-      setSpeaking(false);
-      speakBrowser();
-    }
-  };
-
   const speak = () => {
     if (!text) return;
 
@@ -139,13 +91,8 @@ export default function PlayHebrew({
       return;
     }
 
-    const settings = readSettings(storageKey, defaultLanguage);
-    if (String(settings.provider || "browser") === "google") {
-      speakGoogle();
-    } else {
-      stopAudio();
-      speakBrowser();
-    }
+    stopAudio();
+    speakBrowser();
   };
 
   return (
