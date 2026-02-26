@@ -64,10 +64,6 @@ function getWordText(word) {
 }
 
 function Verse({ verse, selectedSuraNumber, translations = [] }) {
-  const verseText = (verse.words || [])
-    .map((word) => getWordText(word))
-    .filter(Boolean)
-    .join(" ");
   return (
     <div
       className="toHover mb-3 d-block"
@@ -98,8 +94,7 @@ function Verse({ verse, selectedSuraNumber, translations = [] }) {
       <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
         {verse.verseNumber}
       </span>
-      <div className="d-flex flex-wrap align-items-start mt-2">
-        <CopyHebrew text={verseText} />
+      <div className="mt-2">
         <VerseTranslations translations={translations} />
       </div>
     </div>
@@ -206,4 +201,3 @@ export default async function SuraPage({ params }) {
 import Header from "../components/Header";
 import VerseTranslations from "../components/VerseTranslations";
 import QuranProgress from "../components/QuranProgress";
-import CopyHebrew from "../components/CopyHebrew";
