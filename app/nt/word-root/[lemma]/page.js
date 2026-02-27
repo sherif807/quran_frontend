@@ -43,9 +43,15 @@ export async function generateMetadata({ params }) {
   const lemma = decodeURIComponent(params.lemma);
   try {
     const data = await fetchLemma(lemma, { offset: 0, limit: 1 });
-    return { title: `${data.title} - ${lemma}` };
+    return {
+      title: `${data.title} - ${lemma}`,
+      robots: { index: false, follow: false },
+    };
   } catch (e) {
-    return { title: `Lemma ${lemma}` };
+    return {
+      title: `Lemma ${lemma}`,
+      robots: { index: false, follow: false },
+    };
   }
 }
 

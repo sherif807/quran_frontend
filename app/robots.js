@@ -6,7 +6,12 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/"],
+        disallow: [
+          "/api/",
+          "/word-root/",
+          "/tanakh/word-root/",
+          "/nt/word-root/",
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

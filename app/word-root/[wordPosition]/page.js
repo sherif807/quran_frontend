@@ -33,9 +33,13 @@ export async function generateMetadata({ params }) {
     const data = await fetchRoot(wordPosition, { offset: 0, limit: 1 });
     return {
       title: `${data.title} - ${wordPosition}`,
+      robots: { index: false, follow: false },
     };
   } catch (e) {
-    return { title: `Root ${wordPosition}` };
+    return {
+      title: `Root ${wordPosition}`,
+      robots: { index: false, follow: false },
+    };
   }
 }
 
