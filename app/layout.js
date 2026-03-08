@@ -5,7 +5,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Noto_Serif_Hebrew } from "next/font/google";
 import Script from "next/script";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://quranalive.com";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.quranalive.com";
 const SITE_NAME = "QuranAlive";
 const SITE_DESCRIPTION =
   "QuranAlive lets you read Quran in Arabic, Tanakh in Hebrew, and Gospel in Greek, then click any word for root or lemma lookup, interlinear study, translation matching, and listening tools across English, Arabic, Hebrew, and Greek.";

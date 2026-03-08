@@ -1,4 +1,5 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://quranalive.com";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.quranalive.com";
 
 const buildUrl = (path) =>
   `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
