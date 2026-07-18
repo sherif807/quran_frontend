@@ -86,16 +86,20 @@ export default async function WordRootPage({ params, searchParams }) {
           ) : null}
         </div>
       </div>
-      {data.versesArray.map((verse) => {
+      {data.versesArray.map((verse, idx) => {
         const suraMeta = data.allSuras[verse.suraNumber];
         return (
           <div
             key={`${verse.suraNumber}-${verse.verseNumber}`}
             className="mb-3 card rtl"
+            data-verse-ref={`${verse.suraNumber}:${verse.verseNumber}`}
+            data-verse-index={data.offset + idx + 1}
           >
             <a
               href={`/${verse.suraNumber}#verse-${verse.verseNumber}`}
               className="card-header d-block text-decoration-none text-dark"
+              target="_blank"
+              rel="noreferrer"
             >
               {suraMeta
                 ? `${suraMeta.name} ${verse.suraNumber}:${verse.verseNumber}`
@@ -129,6 +133,8 @@ export default async function WordRootPage({ params, searchParams }) {
             <a
               href={`/${verse.suraNumber}#verse-${verse.verseNumber}`}
               className="text-decoration-none"
+              target="_blank"
+              rel="noreferrer"
             >
               <span className="badge badge-dark" style={{ fontSize: "0.4em" }}>
                 {verse.suraNumber}:{verse.verseNumber}
@@ -144,6 +150,7 @@ export default async function WordRootPage({ params, searchParams }) {
           </div>
         );
       })}
+      <QuranProgress totalVerses={data.totalMatches} />
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4">
         <div className="text-muted">
           {`Showing ${showingStart}-${showingEnd} of ${data.totalMatches}`}
@@ -171,4 +178,5 @@ export default async function WordRootPage({ params, searchParams }) {
   );
 }
 import Header from "../../components/Header";
+import QuranProgress from "../../components/QuranProgress";
 import VerseTranslations from "../../components/VerseTranslations";

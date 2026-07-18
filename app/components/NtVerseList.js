@@ -97,7 +97,12 @@ function NtModal({ open, onClose, word }) {
   );
 }
 
-export default function NtVerseList({ verseArray = {}, selectedBook, selectedChapter }) {
+export default function NtVerseList({
+  verseArray = {},
+  selectedBook,
+  selectedChapter,
+  verseIndexByNumber = {},
+}) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
 
@@ -110,6 +115,7 @@ export default function NtVerseList({ verseArray = {}, selectedBook, selectedCha
           style={{ direction: "ltr" }}
           id={`verse-${verseNumber}`}
           data-verse-ref={`${selectedBook} ${selectedChapter}:${verseNumber}`}
+          data-verse-index={verseIndexByNumber?.[verseNumber]}
         >
           <span className="nt-verse" style={{ direction: "ltr" }}>
             <span className="verse-number">{verseNumber}</span>{" "}

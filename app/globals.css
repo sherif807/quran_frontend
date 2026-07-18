@@ -62,6 +62,12 @@ html {
   margin-inline-start: 0.35em;
 }
 
+.toHover,
+.verse-container,
+.tanakh-verse-card {
+  scroll-margin-top: 160px;
+}
+
 .verseLetterCount {
   font-size: 8px;
   position: absolute;

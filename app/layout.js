@@ -109,6 +109,22 @@ export default function RootLayout({ children }) {
     >
       <head>
         <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var stored = window.localStorage.getItem("show-translations");
+                  var showTranslations = stored === null ? false : stored !== "0";
+                  document.documentElement.classList.toggle(
+                    "hide-translations",
+                    !showTranslations
+                  );
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

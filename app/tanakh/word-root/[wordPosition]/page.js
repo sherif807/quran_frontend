@@ -1,6 +1,7 @@
 import Header from "../../../components/Header";
 import PlayHebrew from "../../../components/PlayHebrew";
 import CopyHebrew from "../../../components/CopyHebrew";
+import TanakhProgress from "../../../components/TanakhProgress";
 import VerseTranslations from "../../../components/VerseTranslations";
 import SpeechSettings from "../../../components/SpeechSettings";
 import { cookies } from "next/headers";
@@ -69,6 +70,7 @@ export default async function TanakhRootPage({ params, searchParams }) {
   const prevOffset = Math.max(0, data.offset - data.limit);
   const showingStart = data.totalMatches ? data.offset + 1 : 0;
   const showingEnd = data.offset + data.returned;
+  let verseIndex = data.offset;
 
   return (
     <div className="container py-3">
@@ -109,10 +111,14 @@ export default async function TanakhRootPage({ params, searchParams }) {
               key={`${book}-${chapter}-${verseNum}`}
               className="mb-3 card rtl tanakh-verse-card"
               id={`verse-${book}-${chapter}-${verseNum}`}
+              data-verse-ref={`${book} ${chapter}:${verseNum}`}
+              data-verse-index={++verseIndex}
             >
               <a
                 href={`/tanakh/${book}%20${chapter}#verse-${verseNum}`}
                 className="card-header d-block text-decoration-none text-dark"
+                target="_blank"
+                rel="noreferrer"
               >
                 {book} {chapter} : {verseNum}
               </a>
@@ -149,6 +155,7 @@ export default async function TanakhRootPage({ params, searchParams }) {
           ))
         )
       )}
+      <TanakhProgress totalVerses={data.totalMatches} />
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4">
         <div className="text-muted">
           {`Showing ${showingStart}-${showingEnd} of ${data.totalMatches}`}

@@ -35,6 +35,11 @@ export default function TanakhProgress({ totalVerses = 0 }) {
       }
 
       const ref = best.getAttribute("data-verse-ref") || "";
+      const verseIndex = Number(best.getAttribute("data-verse-index") || "");
+      if (!Number.isNaN(verseIndex) && verseIndex > 0) {
+        setCurrentVerse(verseIndex);
+        return;
+      }
       const parts = ref.split(":");
       const versePart = parts.length > 1 ? parts[1] : "";
       const verseNumber = Number(versePart);
