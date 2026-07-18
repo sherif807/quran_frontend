@@ -97,6 +97,173 @@ const getReadableTranslationName = (translation, code) => {
   return "";
 };
 
+const buildSearchSuggestionHref = (item) => {
+  if (!item) return "#";
+  if (item.corpus === "quran") {
+    return `/${item.suraId}#verse-${item.verse}`;
+  }
+  if (item.corpus === "tanakh") {
+    return `/tanakh/${item.book}%20${item.chapter}#verse-${item.verse}`;
+  }
+  if (item.corpus === "nt") {
+    return `/nt/${item.book}%20${item.chapter}#verse-${item.verse}`;
+  }
+  return "#";
+};
+
+const formatSearchSuggestionLabel = (item) => {
+  if (!item) return "";
+  if (item.corpus === "quran") {
+    return `${item.suraId}:${item.verse}`;
+  }
+  return `${item.book} ${item.chapter}:${item.verse}`;
+};
+
+const stripArabic = (value) =>
+  String(value || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/[\u0640]/g, "")
+    .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
+    .replace(/[\u0649]/g, "\u064A")
+    .replace(/[\u0629]/g, "\u0647")
+    .replace(/[\u0624\u0626\u0621]/g, "\u0621");
+
+const normalizeLatin = (value) =>
+  String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036F]/g, "")
+    .toLowerCase();
+
+const normalizeGreek = (value) => normalizeLatin(value).replace(/\u03c2/g, "\u03c3");
+
+const getSuggestionQueryTokens = (query) => {
+  const trimmed = String(query || "").trim();
+  if (!trimmed) return [];
+  if (/[\u0600-\u06FF]/.test(trimmed)) {
+    return stripArabic(trimmed)
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+  if (/[\u0370-\u03FF\u1F00-\u1FFF]/.test(trimmed)) {
+    return normalizeGreek(trimmed)
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+  return normalizeLatin(trimmed)
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+};
+
+const getDisplayWordNormalizer = (word) => {
+  if (/[\u0600-\u06FF]/.test(word)) {
+    return stripArabic;
+  }
+  if (/[\u0370-\u03FF\u1F00-\u1FFF]/.test(word)) {
+    return normalizeGreek;
+  }
+  return normalizeLatin;
+};
+
+const renderHighlightedSuggestionText = (text, query) => {
+  const source = String(text || "");
+  const tokens = getSuggestionQueryTokens(query);
+  if (!source || !tokens.length) return source;
+
+  const parts = source.split(/(\s+)/);
+  const wordIndexes = [];
+
+  parts.forEach((part, index) => {
+    if (!part.trim()) return;
+    const normalizeWord = getDisplayWordNormalizer(part);
+    const normalizedPart = normalizeWord(part);
+    const isMatch = tokens.some((token) => {
+      if (!token) return false;
+      return (
+        normalizedPart.includes(token) ||
+        token.includes(normalizedPart) ||
+        normalizedPart.startsWith(token) ||
+        token.startsWith(normalizedPart)
+      );
+    });
+    if (isMatch) {
+      wordIndexes.push(index);
+    }
+  });
+
+  const firstMatchIndex = wordIndexes[0];
+  const lastMatchIndex = wordIndexes[wordIndexes.length - 1];
+  const visibleWordPadding = 4;
+
+  let firstWordSeen = 0;
+  let lastWordSeen = -1;
+  let startIndex = 0;
+  let endIndex = parts.length - 1;
+
+  parts.forEach((part, index) => {
+    if (!part.trim()) return;
+    if (index <= firstMatchIndex) {
+      firstWordSeen += 1;
+    }
+    if (index <= lastMatchIndex) {
+      lastWordSeen += 1;
+    }
+  });
+
+  let currentWord = 0;
+  for (let index = 0; index < parts.length; index += 1) {
+    if (!parts[index].trim()) continue;
+    currentWord += 1;
+    if (currentWord >= Math.max(1, firstWordSeen - visibleWordPadding)) {
+      startIndex = Math.max(0, index - 1);
+      break;
+    }
+  }
+
+  currentWord = 0;
+  for (let index = 0; index < parts.length; index += 1) {
+    if (!parts[index].trim()) continue;
+    currentWord += 1;
+    if (currentWord >= lastWordSeen + visibleWordPadding) {
+      endIndex = Math.min(parts.length - 1, index + 1);
+      break;
+    }
+  }
+
+  const visibleParts = parts.slice(startIndex, endIndex + 1);
+
+  return [
+    startIndex > 0 ? <span key="prefix">… </span> : null,
+    ...visibleParts.map((part, index) => {
+      if (!part.trim()) return part;
+      const normalizeWord = getDisplayWordNormalizer(part);
+      const normalizedPart = normalizeWord(part);
+      const isMatch = tokens.some((token) => {
+        if (!token) return false;
+        return (
+          normalizedPart.includes(token) ||
+          token.includes(normalizedPart) ||
+          normalizedPart.startsWith(token) ||
+          token.startsWith(normalizedPart)
+        );
+      });
+      return isMatch ? (
+        <span
+          key={`${part}-${startIndex + index}`}
+          className="header-search-suggestion-hit"
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      );
+    }),
+    endIndex < parts.length - 1 ? <span key="suffix"> …</span> : null,
+  ];
+};
+
 export default function Header({
   allSuras = {},
   selectedSuraNumber,
@@ -200,7 +367,9 @@ export default function Header({
   const [translationName, setTranslationName] = useState("");
   const [suraNameTranslations, setSuraNameTranslations] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [alignmentMode, setAlignmentMode] = useState(false);
 
   useEffect(() => {
@@ -252,18 +421,72 @@ export default function Header({
   }, [pathname]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const shouldOpen = window.localStorage.getItem("nav-open") === "1";
-    if (!shouldOpen) return;
-    const collapse = document.getElementById("navbarContent");
-    if (collapse && !collapse.classList.contains("show")) {
-      collapse.classList.add("show");
-      const toggler = document.querySelector(".navbar-toggler");
-      if (toggler) {
-        toggler.setAttribute("aria-expanded", "true");
-      }
+    const trimmed = searchQuery.trim();
+    const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
+    if (trimmed.length < 2) {
+      setSearchSuggestions([]);
+      setSuggestionsLoading(false);
+      return undefined;
     }
-  }, []);
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        setSuggestionsLoading(true);
+        const bibleTranslations = (
+          window.localStorage.getItem("bible_translations") ||
+          readCookie("bible_translations")
+        )
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean);
+        const quranTranslationLang = (
+          window.localStorage.getItem("quran_translations") ||
+          readCookie("quran_translations")
+        )
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean)[0] || "";
+        const params = new URLSearchParams({
+          q: trimmed,
+          scope,
+          limit: "6",
+        });
+        if ((scope === "tanakh" || scope === "nt") && bibleTranslations.length) {
+          params.set("translations", bibleTranslations[0]);
+        }
+        if (scope === "quran" && quranTranslationLang) {
+          params.set("lang", quranTranslationLang);
+        }
+        const res = await fetch(`${API_BASE}/search/text/suggest?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          setSearchSuggestions([]);
+          return;
+        }
+        const data = await res.json();
+        setSearchSuggestions(Array.isArray(data.results) ? data.results : []);
+      } catch (err) {
+        if (err?.name !== "AbortError") {
+          setSearchSuggestions([]);
+        }
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 180);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [searchQuery, isNt, isTanakh]);
+
+  useEffect(() => {
+    setSearchSuggestions([]);
+    setSuggestionsLoading(false);
+  }, [pathname]);
 
   const setNavOpen = (open) => {
     if (typeof window === "undefined") return;
@@ -285,6 +508,7 @@ export default function Header({
     if (!trimmed) return;
     const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
     setSearchLoading(true);
+    setSearchSuggestions([]);
     router.push(`/search-text?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
     if (typeof document !== "undefined") {
       const collapse = document.getElementById("navbarContent");
@@ -300,6 +524,30 @@ export default function Header({
       window.localStorage.setItem("nav-open", "0");
     }
     setSearchLoading(false);
+  };
+
+  const handleSuggestionClick = (item) => {
+    const href = buildSearchSuggestionHref(item);
+    setSearchSuggestions([]);
+    setSearchQuery("");
+    if (typeof document !== "undefined") {
+      const collapse = document.getElementById("navbarContent");
+      if (collapse && collapse.classList.contains("show")) {
+        collapse.classList.remove("show");
+      }
+      const toggler = document.querySelector(".navbar-toggler");
+      if (toggler) {
+        toggler.setAttribute("aria-expanded", "false");
+      }
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("nav-open", "0");
+    }
+    if (typeof window !== "undefined") {
+      window.location.assign(href);
+      return;
+    }
+    router.push(href);
   };
 
   const toggleAlignmentMode = () => {
@@ -340,6 +588,49 @@ export default function Header({
       router.push(`${readerBasePath}/${selectedTanakhBook}%20${chapter}`);
     }
   };
+
+  const renderSearchForm = () => (
+    <form className="header-search" onSubmit={runTextSearch}>
+      <div className="header-search-input-wrap">
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {(suggestionsLoading || searchSuggestions.length > 0) && (
+          <div className="header-search-suggestions">
+            {searchSuggestions.map((item) => (
+              <button
+                key={`${item.corpus}:${item.ref}:${item.languageCode || ""}`}
+                type="button"
+                className="header-search-suggestion"
+                onClick={() => handleSuggestionClick(item)}
+              >
+                <span className="header-search-suggestion-ref">
+                  {formatSearchSuggestionLabel(item)}
+                </span>
+                <span className="header-search-suggestion-text">
+                  {renderHighlightedSuggestionText(item.text, searchQuery)}
+                </span>
+              </button>
+            ))}
+            {suggestionsLoading && !searchSuggestions.length && (
+              <div className="header-search-suggestion-empty">Searching…</div>
+            )}
+          </div>
+        )}
+      </div>
+      <button
+        className="btn btn-sm btn-outline-secondary"
+        type="submit"
+        disabled={searchLoading}
+      >
+        {searchLoading ? "..." : "Search"}
+      </button>
+    </form>
+  );
 
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light mb-3 sticky-top shadow-sm">
@@ -535,22 +826,7 @@ export default function Header({
       </div>
 
       <div className="header-row header-row-bottom d-none d-lg-flex w-100">
-          <form className="header-search" onSubmit={runTextSearch}>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              className="btn btn-sm btn-outline-secondary"
-              type="submit"
-              disabled={searchLoading}
-            >
-              {searchLoading ? "..." : "Search"}
-            </button>
-          </form>
+          {renderSearchForm()}
           {showTranslationToggle && (
             <div className="header-translation-inline d-flex align-items-center">
               {isTanakh && (
@@ -792,22 +1068,7 @@ export default function Header({
         ) : null}
 
         <div className="d-lg-none mt-3 mb-3">
-          <form className="header-search" onSubmit={runTextSearch}>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              className="btn btn-sm btn-outline-secondary"
-              type="submit"
-              disabled={searchLoading}
-            >
-              {searchLoading ? "..." : "Search"}
-            </button>
-          </form>
+          {renderSearchForm()}
         </div>
         <div className="d-lg-none mb-3">
           <Link className="small text-muted" href="/contact">

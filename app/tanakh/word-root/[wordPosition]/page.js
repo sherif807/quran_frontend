@@ -24,12 +24,14 @@ const getTranslationIds = () => {
     .join(",");
 };
 
-async function fetchRoot(wordPosition, { offset = 0, limit = 50 } = {}) {
+async function fetchRoot(
+  wordPosition,
+  { offset = 0, limit = 50, translationIds = "" } = {}
+) {
   const query = new URLSearchParams({
     offset: String(offset),
     limit: String(limit),
   });
-  const translationIds = getTranslationIds();
   if (translationIds) {
     query.set("translations", translationIds);
   }
@@ -66,7 +68,8 @@ export default async function TanakhRootPage({ params, searchParams }) {
   const offset = toPositiveInt(searchParams?.offset, 0);
   const parsedLimit = toPositiveInt(searchParams?.limit, 50);
   const limit = Math.min(Math.max(parsedLimit || 50, 1), 1000);
-  const data = await fetchRoot(wordPosition, { offset, limit });
+  const translationIds = getTranslationIds();
+  const data = await fetchRoot(wordPosition, { offset, limit, translationIds });
   const prevOffset = Math.max(0, data.offset - data.limit);
   const showingStart = data.totalMatches ? data.offset + 1 : 0;
   const showingEnd = data.offset + data.returned;
