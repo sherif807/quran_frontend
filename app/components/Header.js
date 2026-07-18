@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import TranslationToggle from "./TranslationToggle";
 
 const API_BASE =
@@ -119,6 +119,14 @@ const formatSearchSuggestionLabel = (item) => {
   return `${item.book} ${item.chapter}:${item.verse}`;
 };
 
+const getSuggestionTextClass = (item) => {
+  if (!item) return "";
+  if (item.corpus === "quran" || item.corpus === "tanakh") {
+    return "header-search-suggestion-text rtl";
+  }
+  return "header-search-suggestion-text";
+};
+
 const stripArabic = (value) =>
   String(value || "")
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
@@ -127,6 +135,13 @@ const stripArabic = (value) =>
     .replace(/[\u0649]/g, "\u064A")
     .replace(/[\u0629]/g, "\u0647")
     .replace(/[\u0624\u0626\u0621]/g, "\u0621");
+
+const normalizeHebrew = (value) =>
+  String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0591-\u05C7]/g, "")
+    .replace(/[־"]/g, " ")
+    .replace(/[׳״]/g, "");
 
 const normalizeLatin = (value) =>
   String(value || "")
@@ -137,10 +152,16 @@ const normalizeLatin = (value) =>
 const normalizeGreek = (value) => normalizeLatin(value).replace(/\u03c2/g, "\u03c3");
 
 const getSuggestionQueryTokens = (query) => {
-  const trimmed = String(query || "").trim();
+  const trimmed = String(query || "").replace(/^\s+/, "").trimEnd();
   if (!trimmed) return [];
   if (/[\u0600-\u06FF]/.test(trimmed)) {
     return stripArabic(trimmed)
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+  if (/[\u0590-\u05FF]/.test(trimmed)) {
+    return normalizeHebrew(trimmed)
       .split(/\s+/)
       .map((token) => token.trim())
       .filter(Boolean);
@@ -160,6 +181,9 @@ const getSuggestionQueryTokens = (query) => {
 const getDisplayWordNormalizer = (word) => {
   if (/[\u0600-\u06FF]/.test(word)) {
     return stripArabic;
+  }
+  if (/[\u0590-\u05FF]/.test(word)) {
+    return normalizeHebrew;
   }
   if (/[\u0370-\u03FF\u1F00-\u1FFF]/.test(word)) {
     return normalizeGreek;
@@ -371,6 +395,7 @@ export default function Header({
   const [searchLoading, setSearchLoading] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [alignmentMode, setAlignmentMode] = useState(false);
+  const lastSuggestionKeyRef = useRef("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -421,18 +446,19 @@ export default function Header({
   }, [pathname]);
 
   useEffect(() => {
-    const trimmed = searchQuery.trim();
+    const normalizedQuery = String(searchQuery || "").replace(/^\s+/, "");
+    const trimmed = normalizedQuery.trim();
     const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
     if (trimmed.length < 2) {
       setSearchSuggestions([]);
       setSuggestionsLoading(false);
+      lastSuggestionKeyRef.current = "";
       return undefined;
     }
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
-        setSuggestionsLoading(true);
         const bibleTranslations = (
           window.localStorage.getItem("bible_translations") ||
           readCookie("bible_translations")
@@ -448,7 +474,7 @@ export default function Header({
           .map((value) => value.trim())
           .filter(Boolean)[0] || "";
         const params = new URLSearchParams({
-          q: trimmed,
+          q: normalizedQuery,
           scope,
           limit: "6",
         });
@@ -458,12 +484,21 @@ export default function Header({
         if (scope === "quran" && quranTranslationLang) {
           params.set("lang", quranTranslationLang);
         }
+        const requestKey = params.toString();
+        if (lastSuggestionKeyRef.current === requestKey) {
+          return;
+        }
+        lastSuggestionKeyRef.current = requestKey;
+        setSuggestionsLoading(true);
         const res = await fetch(`${API_BASE}/search/text/suggest?${params.toString()}`, {
           cache: "no-store",
           signal: controller.signal,
         });
         if (!res.ok) {
           setSearchSuggestions([]);
+          if (res.status === 429) {
+            setSuggestionsLoading(false);
+          }
           return;
         }
         const data = await res.json();
@@ -486,6 +521,7 @@ export default function Header({
   useEffect(() => {
     setSearchSuggestions([]);
     setSuggestionsLoading(false);
+    lastSuggestionKeyRef.current = "";
   }, [pathname]);
 
   const setNavOpen = (open) => {
@@ -550,6 +586,28 @@ export default function Header({
     router.push(href);
   };
 
+  const handleFullResultsClick = () => {
+    const normalizedQuery = String(searchQuery || "").replace(/^\s+/, "");
+    const trimmed = normalizedQuery.trim();
+    if (!trimmed) return;
+    const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
+    setSearchSuggestions([]);
+    if (typeof document !== "undefined") {
+      const collapse = document.getElementById("navbarContent");
+      if (collapse && collapse.classList.contains("show")) {
+        collapse.classList.remove("show");
+      }
+      const toggler = document.querySelector(".navbar-toggler");
+      if (toggler) {
+        toggler.setAttribute("aria-expanded", "false");
+      }
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("nav-open", "0");
+    }
+    router.push(`/search-suggest?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
+  };
+
   const toggleAlignmentMode = () => {
     if (typeof window === "undefined") return;
     const next = !alignmentMode;
@@ -601,34 +659,40 @@ export default function Header({
         />
         {(suggestionsLoading || searchSuggestions.length > 0) && (
           <div className="header-search-suggestions">
-            {searchSuggestions.map((item) => (
+            <div className="header-search-suggestions-list">
+              {searchSuggestions.map((item) => (
+                <button
+                  key={`${item.corpus}:${item.ref}:${item.languageCode || ""}`}
+                  type="button"
+                  className="header-search-suggestion"
+                  onClick={() => handleSuggestionClick(item)}
+                >
+                  <span className="header-search-suggestion-ref">
+                    {formatSearchSuggestionLabel(item)}
+                  </span>
+                  <span className="header-search-suggestion-body">
+                    <span className={getSuggestionTextClass(item)}>
+                      {renderHighlightedSuggestionText(item.text, searchQuery)}
+                    </span>
+                  </span>
+                </button>
+              ))}
+              {suggestionsLoading && !searchSuggestions.length && (
+                <div className="header-search-suggestion-empty">Searching…</div>
+              )}
+            </div>
+            {!suggestionsLoading && searchQuery.trim().length >= 2 && (
               <button
-                key={`${item.corpus}:${item.ref}:${item.languageCode || ""}`}
                 type="button"
-                className="header-search-suggestion"
-                onClick={() => handleSuggestionClick(item)}
+                className="header-search-full-results"
+                onClick={handleFullResultsClick}
               >
-                <span className="header-search-suggestion-ref">
-                  {formatSearchSuggestionLabel(item)}
-                </span>
-                <span className="header-search-suggestion-text">
-                  {renderHighlightedSuggestionText(item.text, searchQuery)}
-                </span>
+                Show full results
               </button>
-            ))}
-            {suggestionsLoading && !searchSuggestions.length && (
-              <div className="header-search-suggestion-empty">Searching…</div>
             )}
           </div>
         )}
       </div>
-      <button
-        className="btn btn-sm btn-outline-secondary"
-        type="submit"
-        disabled={searchLoading}
-      >
-        {searchLoading ? "..." : "Search"}
-      </button>
     </form>
   );
 

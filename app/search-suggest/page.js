@@ -1,5 +1,8 @@
 import Header from "../components/Header";
+import NtProgress from "../components/NtProgress";
+import QuranProgress from "../components/QuranProgress";
 import SearchQuranTranslations from "../components/SearchQuranTranslations";
+import TanakhProgress from "../components/TanakhProgress";
 import VerseTranslations from "../components/VerseTranslations";
 import { cookies } from "next/headers";
 
@@ -8,21 +11,13 @@ const API_BASE =
 
 export const revalidate = 0;
 export const metadata = {
-  title: "Scripture Search",
+  title: "Autocomplete Results",
   description:
-    "Search across Quran Arabic text, Tanakh Hebrew text, and Gospel Greek text in English, Arabic, Hebrew, and Greek with language-aware matching on QuranAlive.",
+    "Browse full scripture results from QuranAlive autocomplete with verse-by-verse interactive rendering.",
   alternates: {
-    canonical: "/search-text",
+    canonical: "/search-suggest",
   },
 };
-
-const escapeHtml = (value) =>
-  String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 
 const stripArabic = (value) => {
   if (!value) return "";
@@ -37,17 +32,6 @@ const stripArabic = (value) => {
     .trim();
 };
 
-const buildArabicRegex = (query) => {
-  const cleaned = stripArabic(query).replace(/\s+/g, "");
-  if (!cleaned) return null;
-  const chars = Array.from(cleaned).map((ch) => {
-    if (ch === "\u0627") return "[\u0627\u0671\u0622\u0623\u0625]";
-    return ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  });
-  const sep = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640\\s]*";
-  return new RegExp(chars.join(sep), "g");
-};
-
 const isArabic = (value) => /[\u0600-\u06FF]/.test(value || "");
 const isHebrew = (value) => /[\u0590-\u05FF]/.test(value || "");
 const isGreek = (value) => /[\u0370-\u03FF\u1F00-\u1FFF]/.test(value || "");
@@ -57,6 +41,15 @@ const normalizeText = (value) =>
     .normalize("NFKD")
     .replace(/[\u0300-\u036F]/g, "")
     .toLowerCase();
+
+const normalizeHebrew = (value) =>
+  String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0591-\u05C7]/g, "")
+    .replace(/[־"]/g, " ")
+    .replace(/[׳״]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const normalizeGreek = (value) =>
   normalizeText(value).replace(/\u03c2/g, "\u03c3");
@@ -73,15 +66,7 @@ const buildArabicTokenRegex = (token) => {
     });
     return chars.join("");
   };
-  const base = buildPattern(token);
-  if (token.endsWith("اه")) {
-    const altToken = token.replace(/اه$/, "يه");
-    if (altToken !== token) {
-      const alt = buildPattern(altToken);
-      return new RegExp(`(?:${base}|${alt})`);
-    }
-  }
-  return new RegExp(base);
+  return new RegExp(buildPattern(token));
 };
 
 const matchesArabicWord = (word, queryTokens) => {
@@ -89,14 +74,17 @@ const matchesArabicWord = (word, queryTokens) => {
   if (!cleanedWord) return false;
   return queryTokens.some((token) => {
     const regex = buildArabicTokenRegex(token);
-    if (!regex) return false;
-    return regex.test(cleanedWord);
+    return regex ? regex.test(cleanedWord) : false;
   });
 };
 
 const matchesToken = (text, tokens) => {
   if (!text) return false;
-  const normalized = normalizeText(text);
+  const normalized = isHebrew(text)
+    ? normalizeHebrew(text)
+    : isGreek(text)
+    ? normalizeGreek(text)
+    : normalizeText(text);
   return tokens.some((token) => normalized.includes(token));
 };
 
@@ -113,57 +101,31 @@ const matchesGreekWord = (wordText, lemma, tokens) => {
   });
 };
 
-const highlight = (text, query, corpus) => {
-  if (!text || !query) return escapeHtml(text);
-  const source = String(text);
-  const regex =
-    corpus === "quran" && /[\u0600-\u06FF]/.test(query)
-      ? buildArabicRegex(query)
-      : new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-  if (!regex) return escapeHtml(text);
-
-  let lastIndex = 0;
-  let result = "";
-  let match;
-  while ((match = regex.exec(source))) {
-    const start = match.index;
-    const end = match.index + match[0].length;
-    result += escapeHtml(source.slice(lastIndex, start));
-    result += `<span class="text-info">${escapeHtml(
-      source.slice(start, end)
-    )}</span>`;
-    lastIndex = end;
-    if (!regex.global) break;
-  }
-  result += escapeHtml(source.slice(lastIndex));
-  return result;
-};
-
-async function fetchTextSearch({
+async function fetchSuggestSearch({
   query,
   scope,
   offset = 0,
-  limit = 50,
+  limit = 20,
   translationIds,
+  quranLang,
 }) {
-  if (!query) return { ok: false, results: [], offset: 0, limit: 50, returned: 0, hasMore: false };
-  const safeOffset = Math.max(0, Number(offset) || 0);
-  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 50);
+  if (!query) {
+    return { ok: false, results: [], offset: 0, limit: 20, returned: 0, hasMore: false };
+  }
   const params = new URLSearchParams({
     q: query,
     scope: scope || "quran",
-    limit: String(safeLimit),
-    offset: String(safeOffset),
+    limit: String(Math.min(Math.max(Number(limit) || 20, 1), 50)),
+    offset: String(Math.max(0, Number(offset) || 0)),
   });
-  if (translationIds) {
-    params.set("translations", translationIds);
-  }
-  const res = await fetch(`${API_BASE}/search/text?${params.toString()}`, {
+  if (translationIds) params.set("translations", translationIds);
+  if (quranLang) params.set("lang", quranLang);
+  const res = await fetch(`${API_BASE}/search/text/suggest/full?${params.toString()}`, {
     cache: "no-store",
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Search failed.");
+    throw new Error(data.error || "Autocomplete search failed.");
   }
   return res.json();
 }
@@ -181,57 +143,6 @@ const buildResultHref = (item) => {
   return "#";
 };
 
-async function fetchHeaderData(scope) {
-  if (scope === "tanakh") {
-    const res = await fetch(`${API_BASE}/tanakh/GEN%201`, { cache: "no-store" });
-    if (!res.ok) return {};
-    const data = await res.json();
-    return {
-      tanakhMenu: data.menu || {},
-      selectedBook: "GEN",
-      selectedChapter: 1,
-    };
-  }
-  if (scope === "nt") {
-    const res = await fetch(`${API_BASE}/nt/MT%201`, { cache: "no-store" });
-    if (!res.ok) return {};
-    const data = await res.json();
-    return {
-      tanakhMenu: data.menu || {},
-      selectedBook: "MT",
-      selectedChapter: 1,
-    };
-  }
-  const res = await fetch(`${API_BASE}/quran/1?mode=light`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return {};
-  const data = await res.json();
-  return {
-    allSuras: data.allSuras || {},
-    selectedSuraNumber: 1,
-  };
-}
-
-const getTranslationLang = () => {
-  const store = cookies().get("quran_translations")?.value || "";
-  const first = store
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean)[0];
-  return first || "";
-};
-
-const getBibleTranslationIds = () => {
-  const store = cookies().get("bible_translations")?.value || "";
-  const cleaned = store
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .join(",");
-  return cleaned || "";
-};
-
 async function fetchSuraNameTranslations(lang) {
   if (!lang) return {};
   const res = await fetch(
@@ -243,30 +154,59 @@ async function fetchSuraNameTranslations(lang) {
   return data.names || {};
 }
 
-export default async function SearchTextPage({ searchParams }) {
-  const query = String(searchParams?.q || "").trim();
+async function fetchHeaderData(scope) {
+  if (scope === "tanakh") {
+    const res = await fetch(`${API_BASE}/tanakh/GEN%201`, { cache: "no-store" });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return { tanakhMenu: data.menu || {}, selectedBook: "GEN", selectedChapter: 1 };
+  }
+  if (scope === "nt") {
+    const res = await fetch(`${API_BASE}/nt/MT%201`, { cache: "no-store" });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return { tanakhMenu: data.menu || {}, selectedBook: "MT", selectedChapter: 1 };
+  }
+  const res = await fetch(`${API_BASE}/quran/1?mode=light`, { cache: "no-store" });
+  if (!res.ok) return {};
+  const data = await res.json();
+  return { allSuras: data.allSuras || {}, selectedSuraNumber: 1 };
+}
+
+const getTranslationLang = () => {
+  const store = cookies().get("quran_translations")?.value || "";
+  return store.split(",").map((t) => t.trim()).filter(Boolean)[0] || "";
+};
+
+const getBibleTranslationIds = () => {
+  const store = cookies().get("bible_translations")?.value || "";
+  return store.split(",").map((t) => t.trim()).filter(Boolean).join(",");
+};
+
+export default async function SearchSuggestPage({ searchParams }) {
+  const query = String(searchParams?.q || "").replace(/^\s+/, "");
   const scope = String(searchParams?.scope || "quran").toLowerCase();
   const offset = Math.max(0, Number(searchParams?.offset || 0));
-  const requestedLimit = Number(searchParams?.limit || 50);
-  const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 50, 1), 50);
+  const limit = Math.min(Math.max(Number(searchParams?.limit || 20) || 20, 1), 50);
   const translationLang = getTranslationLang();
   const bibleTranslationIds = getBibleTranslationIds();
   const suraNameTranslations = await fetchSuraNameTranslations(translationLang);
   const headerData = await fetchHeaderData(scope);
 
-  let data = { ok: false, results: [], script: "" };
+  let data = { ok: false, results: [] };
   let error = "";
-  if (query) {
+  if (query.trim()) {
     try {
-      data = await fetchTextSearch({
+      data = await fetchSuggestSearch({
         query,
         scope,
         offset,
         limit,
         translationIds: bibleTranslationIds,
+        quranLang: translationLang,
       });
     } catch (err) {
-      error = err?.message || "Search failed.";
+      error = err?.message || "Autocomplete search failed.";
     }
   }
 
@@ -307,14 +247,12 @@ export default async function SearchTextPage({ searchParams }) {
 
       {!error && query && data.ok && data.results.length > 0 && (
         <div className="d-flex flex-wrap align-items-center justify-content-between mb-3">
-          <div className="small text-muted">
-            {`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}
-          </div>
+          <div className="small text-muted">{`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}</div>
           <div className="d-flex gap-2">
             {currentOffset > 0 ? (
               <a
                 className="btn btn-outline-secondary btn-sm"
-                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
               >
                 Previous
               </a>
@@ -322,7 +260,7 @@ export default async function SearchTextPage({ searchParams }) {
             {data.hasMore ? (
               <a
                 className="btn btn-primary btn-sm"
-                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
               >
                 Next
               </a>
@@ -333,22 +271,27 @@ export default async function SearchTextPage({ searchParams }) {
 
       {data.results.map((item, idx) => {
         const isQuran = item.corpus === "quran";
-        const cardClass = isQuran
-          ? "mb-3 card rtl"
-          : "mb-3 card tanakh-verse-card";
+        const cardClass = isQuran ? "mb-3 card rtl" : "mb-3 card tanakh-verse-card";
         const bodyClass = isQuran ? "card-body quran-verse" : "card-body";
-        const bodyStyle = { backgroundColor: "#f7f2d1" };
-        const bodyDir = isQuran
-          ? { direction: "rtl", textAlign: "right" }
-          : { direction: "ltr" };
+        const bodyDir = isQuran ? { direction: "rtl", textAlign: "right" } : { direction: "ltr" };
         const queryIsArabic = isArabic(query);
         const queryIsHebrew = isHebrew(query);
         const queryIsGreek = isGreek(query);
         const queryTokens = queryIsArabic
           ? stripArabic(query).split(/\s+/).filter(Boolean)
+          : queryIsHebrew
+          ? normalizeHebrew(query).split(/\s+/).filter(Boolean)
+          : queryIsGreek
+          ? normalizeGreek(query).split(/\s+/).filter(Boolean)
           : normalizeText(query).split(/\s+/).filter(Boolean);
+
         return (
-          <div key={`${item.ref}-${idx}`} className={cardClass}>
+          <div
+            key={`${item.ref}-${idx}`}
+            className={cardClass}
+            data-verse-ref={item.ref}
+            data-verse-index={currentOffset + idx + 1}
+          >
             <a
               href={buildResultHref(item)}
               className="card-header d-block text-decoration-none"
@@ -357,8 +300,7 @@ export default async function SearchTextPage({ searchParams }) {
             >
               {item.corpus === "quran" ? (
                 <>
-                  {item.suraName || item.ref}{" "}
-                  {item.suraId}:{item.verseNumber}
+                  {item.suraName || item.ref} {item.suraId}:{item.verseNumber}
                   {translationLang &&
                     suraNameTranslations[item.suraId] && (
                       <span className="quran-translation-label">
@@ -374,7 +316,7 @@ export default async function SearchTextPage({ searchParams }) {
                 </>
               )}
             </a>
-            <div className={bodyClass} style={{ ...bodyStyle, ...bodyDir }}>
+            <div className={bodyClass} style={{ backgroundColor: "#f7f2d1", ...bodyDir }}>
               {item.corpus === "quran" && Array.isArray(item.words) && (
                 <div className="search-quran-text mb-0">
                   {item.words.map((word, widx) => {
@@ -417,12 +359,8 @@ export default async function SearchTextPage({ searchParams }) {
                     return (
                       <a
                         key={`${item.ref}-${widx}`}
-                        className={`hebrew-text wordRootTanakh ${
-                          isMatch ? "text-info" : ""
-                        }`}
-                        href={`/tanakh/word-root/${encodeURIComponent(
-                          word.ref
-                        )}`}
+                        className={`hebrew-text wordRootTanakh ${isMatch ? "text-info" : ""}`}
+                        href={`/tanakh/word-root/${encodeURIComponent(word.ref)}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -442,12 +380,8 @@ export default async function SearchTextPage({ searchParams }) {
                     return (
                       <a
                         key={`${item.ref}-${widx}`}
-                        className={`nt-text wordRootTanakh ${
-                          isMatch ? "text-info" : ""
-                        }`}
-                        href={`/nt/word-root/${encodeURIComponent(
-                          word.lemma || ""
-                        )}`}
+                        className={`nt-text wordRootTanakh ${isMatch ? "text-info" : ""}`}
+                        href={`/nt/word-root/${encodeURIComponent(word.lemma || "")}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -462,32 +396,31 @@ export default async function SearchTextPage({ searchParams }) {
                 <div className="translation-container mt-2">
                   <VerseTranslations translations={item.translations} />
                 </div>
-              ) : item.text && item.corpus !== "quran" ? (
-                <div
-                  className="translation mt-2"
-                  dangerouslySetInnerHTML={{
-                    __html: highlight(item.text || "", query, item.corpus),
-                  }}
-                />
               ) : null}
-              {item.corpus === "quran" && (
-                <SearchQuranTranslations results={[item]} />
-              )}
+              {item.corpus === "quran" && <SearchQuranTranslations results={[item]} />}
             </div>
           </div>
         );
       })}
 
       {!error && query && data.ok && data.results.length > 0 && (
+        scope === "quran" ? (
+          <QuranProgress totalVerses={totalMatches} />
+        ) : scope === "tanakh" ? (
+          <TanakhProgress totalVerses={totalMatches} />
+        ) : (
+          <NtProgress totalVerses={totalMatches} />
+        )
+      )}
+
+      {!error && query && data.ok && data.results.length > 0 && (
         <div className="d-flex flex-wrap align-items-center justify-content-between mt-3">
-          <div className="small text-muted">
-            {`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}
-          </div>
+          <div className="small text-muted">{`Showing ${showingStart}-${showingEnd} of ${totalMatches}`}</div>
           <div className="d-flex gap-2">
             {currentOffset > 0 ? (
               <a
                 className="btn btn-outline-secondary btn-sm"
-                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
               >
                 Previous
               </a>
@@ -495,7 +428,7 @@ export default async function SearchTextPage({ searchParams }) {
             {data.hasMore ? (
               <a
                 className="btn btn-primary btn-sm"
-                href={`/search-text?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
               >
                 Next
               </a>
