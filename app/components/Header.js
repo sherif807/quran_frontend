@@ -613,6 +613,16 @@ export default function Header({
       return undefined;
     }
 
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlScrollBehavior = html.style.scrollBehavior;
+    const previousBodyScrollBehavior = body.style.scrollBehavior;
+
+    html.classList.add("mobile-search-active");
+    body.classList.add("mobile-search-active");
+    html.style.scrollBehavior = "auto";
+    body.style.scrollBehavior = "auto";
+
     const ensureSearchAtTop = () => {
       const anchor =
         searchInputWrapRef.current?.closest(".navbar") || searchInputWrapRef.current;
@@ -628,14 +638,27 @@ export default function Header({
       document.body.scrollTop = 0;
     };
 
+    ensureSearchAtTop();
     const timer = window.setTimeout(ensureSearchAtTop, 60);
+    const timer2 = window.setTimeout(ensureSearchAtTop, 180);
+    const raf1 = window.requestAnimationFrame(ensureSearchAtTop);
+    const raf2 = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(ensureSearchAtTop);
+    });
     window.visualViewport?.addEventListener("resize", ensureSearchAtTop);
     window.visualViewport?.addEventListener("scroll", ensureSearchAtTop);
 
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(timer2);
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
       window.visualViewport?.removeEventListener("resize", ensureSearchAtTop);
       window.visualViewport?.removeEventListener("scroll", ensureSearchAtTop);
+      html.classList.remove("mobile-search-active");
+      body.classList.remove("mobile-search-active");
+      html.style.scrollBehavior = previousHtmlScrollBehavior;
+      body.style.scrollBehavior = previousBodyScrollBehavior;
     };
   }, [mobileSearchPinned]);
 

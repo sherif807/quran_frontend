@@ -45,6 +45,11 @@ html {
   scroll-behavior: smooth;
 }
 
+html.mobile-search-active,
+body.mobile-search-active {
+  scroll-behavior: auto !important;
+}
+
 .rtl {
   direction: rtl;
   text-align: right;
@@ -810,6 +815,11 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 991.98px) {
+  .mobile-search-active .navbar.sticky-top {
+    position: static;
+    top: auto;
+  }
+
   .page-shell.container {
     max-width: none;
     padding-left: 10px;
