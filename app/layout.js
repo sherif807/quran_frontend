@@ -191,7 +191,7 @@ export default function RootLayout({ children }) {
             })(window, document, "clarity", "script", "vn98f32q8a");
           `}
         </Script>
-        <div className="container py-3">{children}</div>
+        <div className="container py-3 page-shell">{children}</div>
       </body>
     </html>
   );

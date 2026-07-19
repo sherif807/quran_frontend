@@ -458,6 +458,7 @@ export default function Header({
   const searchInputWrapRef = useRef(null);
   const searchSuggestionsRef = useRef(null);
   const [suggestionsOverlayStyle, setSuggestionsOverlayStyle] = useState(null);
+  const [suggestionsBackdropStyle, setSuggestionsBackdropStyle] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -596,6 +597,7 @@ export default function Header({
       suggestionsLoading || searchSuggestions.length > 0;
     if (!hasSuggestionsUi) {
       setSuggestionsOverlayStyle(null);
+      setSuggestionsBackdropStyle(null);
       return undefined;
     }
 
@@ -604,24 +606,64 @@ export default function Header({
       const inputWrap = searchInputWrapRef.current;
       if (!inputWrap) return;
       const rect = inputWrap.getBoundingClientRect();
-      const top = Math.max(rect.bottom + 6, 0);
+      const viewport = window.visualViewport;
+      const viewportHeight = viewport?.height || window.innerHeight;
+      const viewportOffsetTop = viewport?.offsetTop || 0;
+      const isMobileViewport = window.innerWidth <= 991.98;
+      const gap = isMobileViewport ? 4 : 6;
+      const overlayTop = Math.max(rect.bottom + gap, 0);
+      const backdropTop = Math.max(overlayTop + viewportOffsetTop, 0);
+
+      if (isMobileViewport) {
+        const availableBelow = Math.max(viewportHeight - rect.bottom - gap - 8, 140);
+        setSuggestionsOverlayStyle({
+          top: rect.height + gap,
+          left: 0,
+          width: "100%",
+          height: Math.min(availableBelow, 320),
+        });
+        setSuggestionsBackdropStyle({
+          top: backdropTop,
+          height: Math.max(viewportHeight - rect.bottom - gap, 140),
+        });
+        return;
+      }
+
       setSuggestionsOverlayStyle({
-        top,
+        top: overlayTop,
         left: rect.left,
         width: rect.width,
-        height: Math.max(window.innerHeight - top - 12, 180),
+        height: Math.max(window.innerHeight - overlayTop - 12, 180),
+      });
+      setSuggestionsBackdropStyle({
+        top: overlayTop,
+        height: Math.max(window.innerHeight - overlayTop, 180),
       });
     };
 
     updateOverlayPosition();
     window.addEventListener("resize", updateOverlayPosition);
     window.addEventListener("scroll", updateOverlayPosition, true);
+    window.visualViewport?.addEventListener("resize", updateOverlayPosition);
+    window.visualViewport?.addEventListener("scroll", updateOverlayPosition);
 
     return () => {
       window.removeEventListener("resize", updateOverlayPosition);
       window.removeEventListener("scroll", updateOverlayPosition, true);
+      window.visualViewport?.removeEventListener("resize", updateOverlayPosition);
+      window.visualViewport?.removeEventListener("scroll", updateOverlayPosition);
     };
   }, [suggestionsLoading, searchSuggestions.length]);
+
+  const handleSearchFocus = () => {
+    if (typeof window === "undefined" || window.innerWidth > 991.98) return;
+    window.setTimeout(() => {
+      searchInputWrapRef.current?.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+      });
+    }, 80);
+  };
 
   useEffect(() => {
     const hasSuggestionsUi =
@@ -809,19 +851,13 @@ export default function Header({
           placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={handleSearchFocus}
         />
         {(suggestionsLoading || searchSuggestions.length > 0) && (
           <>
             <div
               className="header-search-backdrop"
-              style={
-                suggestionsOverlayStyle
-                  ? {
-                      top: suggestionsOverlayStyle.top,
-                      height: suggestionsOverlayStyle.height,
-                    }
-                  : undefined
-              }
+              style={suggestionsBackdropStyle || undefined}
             />
             <div
               ref={searchSuggestionsRef}

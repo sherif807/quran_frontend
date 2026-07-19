@@ -37,6 +37,10 @@ body {
   background-color: #f8f9fa;
 }
 
+.page-shell {
+  width: 100%;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -713,6 +717,10 @@ input:checked + .slider:before {
   -webkit-backdrop-filter: blur(8px);
 }
 
+.header-search-input-wrap {
+  position: relative;
+}
+
 .header-search-suggestions-list {
   overflow-y: auto;
   flex: 1 1 auto;
@@ -798,6 +806,12 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 991.98px) {
+  .page-shell.container {
+    max-width: none;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
   .header-search .form-control,
   .header-search .btn {
     padding-top: 0.6rem;
@@ -846,17 +860,31 @@ input:checked + .slider:before {
   }
 
   .header-search-suggestions {
+    position: absolute;
     border-radius: 12px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
   }
 
   .header-search-suggestion {
     grid-template-columns: 64px minmax(0, 1fr);
-    gap: 10px;
-    padding: 12px;
+    gap: 8px;
+    padding: 10px 12px;
   }
 
   .header-search-suggestion-text {
-    max-height: 4.65em;
+    max-height: 4.3em;
+    line-height: 1.45;
+  }
+
+  .header-search-full-results {
+    min-height: 50px;
+    padding: 10px 12px;
+  }
+
+  .header-search-backdrop {
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .header-bible-panel-desktop {
@@ -865,6 +893,52 @@ input:checked + .slider:before {
 
   .header-bible-panel-actions {
     justify-content: space-between;
+  }
+
+  .navbar-collapse {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+
+  .header-content {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .header-left {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .header-top {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .header-row {
+    gap: 8px;
+  }
+
+  .navbar {
+    margin-left: -2px;
+    margin-right: -2px;
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
+  }
+
+  .header-bible-panel-desktop {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    gap: 10px;
+  }
+
+  .header-bible-panel-controls {
+    gap: 12px;
   }
 }
 
