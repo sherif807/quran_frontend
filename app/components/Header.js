@@ -455,6 +455,7 @@ export default function Header({
   const [searchLoading, setSearchLoading] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const lastSuggestionKeyRef = useRef("");
+  const searchInputRef = useRef(null);
   const searchInputWrapRef = useRef(null);
   const searchSuggestionsRef = useRef(null);
   const searchBlurTimerRef = useRef(null);
@@ -638,9 +639,23 @@ export default function Header({
       document.body.scrollTop = 0;
     };
 
+    const refreshInputCaret = () => {
+      const input = searchInputRef.current;
+      if (!input || document.activeElement !== input) return;
+      const valueLength = input.value.length;
+      input.blur();
+      window.requestAnimationFrame(() => {
+        input.focus({ preventScroll: true });
+        try {
+          input.setSelectionRange(valueLength, valueLength);
+        } catch {}
+      });
+    };
+
     ensureSearchAtTop();
     const timer = window.setTimeout(ensureSearchAtTop, 60);
     const timer2 = window.setTimeout(ensureSearchAtTop, 180);
+    const caretTimer = window.setTimeout(refreshInputCaret, 120);
     const raf1 = window.requestAnimationFrame(ensureSearchAtTop);
     const raf2 = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(ensureSearchAtTop);
@@ -651,6 +666,7 @@ export default function Header({
     return () => {
       window.clearTimeout(timer);
       window.clearTimeout(timer2);
+      window.clearTimeout(caretTimer);
       window.cancelAnimationFrame(raf1);
       window.cancelAnimationFrame(raf2);
       window.visualViewport?.removeEventListener("resize", ensureSearchAtTop);
@@ -957,6 +973,7 @@ export default function Header({
         ref={searchInputWrapRef}
       >
         <input
+          ref={searchInputRef}
           type="text"
           className="form-control form-control-sm"
           placeholder="Search..."
