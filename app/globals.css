@@ -677,6 +677,10 @@ input:checked + .slider:before {
   min-width: 0;
 }
 
+.header-search-input-spacer {
+  display: none;
+}
+
 .header-search .form-control {
   min-width: 180px;
   width: 100%;
@@ -808,8 +812,8 @@ input:checked + .slider:before {
 @media (max-width: 991.98px) {
   .page-shell.container {
     max-width: none;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
   .header-search .form-control,
@@ -828,6 +832,12 @@ input:checked + .slider:before {
   .header-search-input-wrap {
     flex: 0 0 100%;
     max-width: 100%;
+    width: 100%;
+  }
+
+  .header-search-input-spacer {
+    display: block;
+    flex: 0 0 100%;
     width: 100%;
   }
 
@@ -865,6 +875,22 @@ input:checked + .slider:before {
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
   }
 
+  .header-search-input-wrap.mobile-search-pinned {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: 10px;
+    right: 10px;
+    z-index: 1060;
+    width: auto;
+    max-width: none;
+    padding: 0;
+  }
+
+  .header-search-input-wrap.mobile-search-pinned .form-control {
+    background: #fff;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
+  }
+
   .header-search-suggestion {
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 8px;
@@ -898,8 +924,6 @@ input:checked + .slider:before {
   .navbar-collapse {
     padding-left: 0;
     padding-right: 0;
-    margin-left: -2px;
-    margin-right: -2px;
   }
 
   .header-content {
@@ -913,8 +937,8 @@ input:checked + .slider:before {
   }
 
   .header-top {
-    padding-left: 2px;
-    padding-right: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
   }
 
   .header-row {
@@ -922,10 +946,8 @@ input:checked + .slider:before {
   }
 
   .navbar {
-    margin-left: -2px;
-    margin-right: -2px;
-    padding-left: 0.2rem;
-    padding-right: 0.2rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
   }
 
   .header-bible-panel-desktop {

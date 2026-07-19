@@ -457,8 +457,11 @@ export default function Header({
   const lastSuggestionKeyRef = useRef("");
   const searchInputWrapRef = useRef(null);
   const searchSuggestionsRef = useRef(null);
+  const searchBlurTimerRef = useRef(null);
   const [suggestionsOverlayStyle, setSuggestionsOverlayStyle] = useState(null);
   const [suggestionsBackdropStyle, setSuggestionsBackdropStyle] = useState(null);
+  const [mobileSearchPinned, setMobileSearchPinned] = useState(false);
+  const [mobileSearchPinnedHeight, setMobileSearchPinnedHeight] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -590,7 +593,16 @@ export default function Header({
     setSearchSuggestions([]);
     setSuggestionsLoading(false);
     lastSuggestionKeyRef.current = "";
+    setMobileSearchPinned(false);
   }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (searchBlurTimerRef.current) {
+        window.clearTimeout(searchBlurTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const hasSuggestionsUi =
@@ -657,17 +669,37 @@ export default function Header({
 
   const handleSearchFocus = () => {
     if (typeof window === "undefined" || window.innerWidth > 991.98) return;
-    window.setTimeout(() => {
-      const nav = document.querySelector(".navbar");
-      const navTop =
-        nav && typeof nav.getBoundingClientRect === "function"
-          ? nav.getBoundingClientRect().top + window.scrollY
-          : 0;
-      window.scrollTo({
-        top: Math.max(0, navTop - 6),
-        behavior: "smooth",
-      });
-    }, 80);
+    if (searchBlurTimerRef.current) {
+      window.clearTimeout(searchBlurTimerRef.current);
+      searchBlurTimerRef.current = null;
+    }
+    const inputWrap = searchInputWrapRef.current;
+    if (inputWrap) {
+      setMobileSearchPinnedHeight(
+        Math.max(inputWrap.getBoundingClientRect().height, 54)
+      );
+    }
+    setMobileSearchPinned(true);
+  };
+
+  const handleSearchBlur = () => {
+    if (typeof window === "undefined" || window.innerWidth > 991.98) return;
+    if (searchBlurTimerRef.current) {
+      window.clearTimeout(searchBlurTimerRef.current);
+    }
+    searchBlurTimerRef.current = window.setTimeout(() => {
+      const activeElement = document.activeElement;
+      const inputWrap = searchInputWrapRef.current;
+      const suggestions = searchSuggestionsRef.current;
+      const isStillInside =
+        !!activeElement &&
+        ((inputWrap && inputWrap.contains(activeElement)) ||
+          (suggestions && suggestions.contains(activeElement)));
+      if (!isStillInside) {
+        setMobileSearchPinned(false);
+      }
+      searchBlurTimerRef.current = null;
+    }, 120);
   };
 
   useEffect(() => {
@@ -689,6 +721,7 @@ export default function Header({
       }
       setSearchSuggestions([]);
       setSuggestionsLoading(false);
+      setMobileSearchPinned(false);
     };
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -721,6 +754,7 @@ export default function Header({
     const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
     setSearchLoading(true);
     setSearchSuggestions([]);
+    setMobileSearchPinned(false);
     router.push(`/search-text?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
     if (typeof document !== "undefined") {
       const collapse = document.getElementById("navbarContent");
@@ -742,6 +776,7 @@ export default function Header({
     const href = buildSearchSuggestionHref(item);
     setSearchSuggestions([]);
     setSearchQuery("");
+    setMobileSearchPinned(false);
     if (typeof document !== "undefined") {
       const collapse = document.getElementById("navbarContent");
       if (collapse && collapse.classList.contains("show")) {
@@ -768,6 +803,7 @@ export default function Header({
     if (!trimmed) return;
     const scope = isTanakh ? "tanakh" : isNt ? "nt" : "quran";
     setSearchSuggestions([]);
+    setMobileSearchPinned(false);
     if (typeof document !== "undefined") {
       const collapse = document.getElementById("navbarContent");
       if (collapse && collapse.classList.contains("show")) {
@@ -849,7 +885,19 @@ export default function Header({
 
   const renderSearchForm = () => (
     <form className="header-search" onSubmit={runTextSearch}>
-      <div className="header-search-input-wrap" ref={searchInputWrapRef}>
+      {mobileSearchPinned && (
+        <div
+          className="header-search-input-spacer"
+          aria-hidden="true"
+          style={{ height: `${mobileSearchPinnedHeight || 56}px` }}
+        />
+      )}
+      <div
+        className={`header-search-input-wrap${
+          mobileSearchPinned ? " mobile-search-pinned" : ""
+        }`}
+        ref={searchInputWrapRef}
+      >
         <input
           type="text"
           className="form-control form-control-sm"
@@ -857,6 +905,7 @@ export default function Header({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={handleSearchFocus}
+          onBlur={handleSearchBlur}
         />
         {(suggestionsLoading || searchSuggestions.length > 0) && (
           <>
