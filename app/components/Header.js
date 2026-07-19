@@ -680,6 +680,20 @@ export default function Header({
       );
     }
     setMobileSearchPinned(true);
+    window.setTimeout(() => {
+      const anchor =
+        searchInputWrapRef.current?.closest(".navbar") || searchInputWrapRef.current;
+      if (anchor && typeof anchor.scrollIntoView === "function") {
+        anchor.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: "auto",
+        });
+      }
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 30);
   };
 
   const handleSearchBlur = () => {
