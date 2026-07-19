@@ -460,7 +460,11 @@ export default async function SearchTextPage({ searchParams }) {
 
               {item.translations?.length ? (
                 <div className="translation-container mt-2">
-                  <VerseTranslations translations={item.translations} />
+                  <VerseTranslations
+                    translations={item.translations}
+                    highlightQuery={query}
+                    highlightCorpus={item.corpus}
+                  />
                 </div>
               ) : item.text && item.corpus !== "quran" ? (
                 <div
@@ -471,7 +475,11 @@ export default async function SearchTextPage({ searchParams }) {
                 />
               ) : null}
               {item.corpus === "quran" && (
-                <SearchQuranTranslations results={[item]} />
+                <SearchQuranTranslations
+                  results={[item]}
+                  highlightQuery={query}
+                  highlightCorpus={item.corpus}
+                />
               )}
             </div>
           </div>

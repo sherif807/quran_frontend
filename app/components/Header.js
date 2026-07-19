@@ -197,7 +197,13 @@ const renderHighlightedSuggestionText = (text, query) => {
   if (!source || !tokens.length) return source;
 
   const parts = source.split(/(\s+)/);
-  const wordIndexes = [];
+  const trimmedQuery = String(query || "").replace(/^\s+/, "").trimEnd();
+  const normalizedQuery = trimmedQuery
+    ? getDisplayWordNormalizer(trimmedQuery)(trimmedQuery)
+    : "";
+  const matchWordIndexes = [];
+  let phraseStartIndex = -1;
+  let phraseEndIndex = -1;
 
   parts.forEach((part, index) => {
     if (!part.trim()) return;
@@ -213,9 +219,44 @@ const renderHighlightedSuggestionText = (text, query) => {
       );
     });
     if (isMatch) {
-      wordIndexes.push(index);
+      matchWordIndexes.push(index);
     }
   });
+
+  if (normalizedQuery) {
+    const visibleWords = [];
+    parts.forEach((part, index) => {
+      if (!part.trim()) return;
+      visibleWords.push({
+        index,
+        normalized: getDisplayWordNormalizer(part)(part),
+      });
+    });
+
+    for (let start = 0; start < visibleWords.length; start += 1) {
+      let combined = "";
+      for (let end = start; end < visibleWords.length; end += 1) {
+        combined = combined
+          ? `${combined} ${visibleWords[end].normalized}`
+          : visibleWords[end].normalized;
+        if (combined.includes(normalizedQuery)) {
+          phraseStartIndex = visibleWords[start].index;
+          phraseEndIndex = visibleWords[end].index;
+          break;
+        }
+      }
+      if (phraseStartIndex !== -1) break;
+    }
+  }
+
+  const wordIndexes =
+    phraseStartIndex !== -1
+      ? matchWordIndexes.filter(
+          (index) => index >= phraseStartIndex && index <= phraseEndIndex
+        )
+      : matchWordIndexes;
+
+  if (!wordIndexes.length) return source;
 
   const firstMatchIndex = wordIndexes[0];
   const lastMatchIndex = wordIndexes[wordIndexes.length - 1];
@@ -387,6 +428,25 @@ export default function Header({
   const [selectedTanakhChapter, setSelectedTanakhChapter] = useState(
     selectedChapter || ""
   );
+  const currentSearchContext = useMemo(() => {
+    if (isTanakh || isNt) {
+      return {
+        book: selectedTanakhBook || selectedBook || "",
+        chapter: selectedTanakhChapter || selectedChapter || "",
+      };
+    }
+    return {
+      sura: selectedSuraNumber || "",
+    };
+  }, [
+    isNt,
+    isTanakh,
+    selectedBook,
+    selectedChapter,
+    selectedSuraNumber,
+    selectedTanakhBook,
+    selectedTanakhChapter,
+  ]);
 
   const [translationName, setTranslationName] = useState("");
   const [suraNameTranslations, setSuraNameTranslations] = useState({});
@@ -394,8 +454,10 @@ export default function Header({
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [alignmentMode, setAlignmentMode] = useState(false);
   const lastSuggestionKeyRef = useRef("");
+  const searchInputWrapRef = useRef(null);
+  const searchSuggestionsRef = useRef(null);
+  const [suggestionsOverlayStyle, setSuggestionsOverlayStyle] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -435,11 +497,6 @@ export default function Header({
   }, [pathname]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setAlignmentMode(window.localStorage.getItem("tanakh_alignment_mode") === "1");
-  }, []);
-
-  useEffect(() => {
     if (!pathname || pathname === "/settings") return;
     if (typeof window === "undefined") return;
     window.localStorage.setItem("last-page", pathname);
@@ -476,13 +533,23 @@ export default function Header({
         const params = new URLSearchParams({
           q: normalizedQuery,
           scope,
-          limit: "6",
+          limit: "10",
         });
         if ((scope === "tanakh" || scope === "nt") && bibleTranslations.length) {
-          params.set("translations", bibleTranslations[0]);
+          params.set("translations", bibleTranslations.join(","));
         }
         if (scope === "quran" && quranTranslationLang) {
           params.set("lang", quranTranslationLang);
+        }
+        if (scope === "tanakh" || scope === "nt") {
+          if (currentSearchContext.book) {
+            params.set("currentBook", currentSearchContext.book);
+          }
+          if (currentSearchContext.chapter) {
+            params.set("currentChapter", String(currentSearchContext.chapter));
+          }
+        } else if (currentSearchContext.sura) {
+          params.set("currentSura", String(currentSearchContext.sura));
         }
         const requestKey = params.toString();
         if (lastSuggestionKeyRef.current === requestKey) {
@@ -516,13 +583,75 @@ export default function Header({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [searchQuery, isNt, isTanakh]);
+  }, [currentSearchContext, isNt, isTanakh, searchQuery]);
 
   useEffect(() => {
     setSearchSuggestions([]);
     setSuggestionsLoading(false);
     lastSuggestionKeyRef.current = "";
   }, [pathname]);
+
+  useEffect(() => {
+    const hasSuggestionsUi =
+      suggestionsLoading || searchSuggestions.length > 0;
+    if (!hasSuggestionsUi) {
+      setSuggestionsOverlayStyle(null);
+      return undefined;
+    }
+
+    const updateOverlayPosition = () => {
+      if (typeof window === "undefined") return;
+      const inputWrap = searchInputWrapRef.current;
+      if (!inputWrap) return;
+      const rect = inputWrap.getBoundingClientRect();
+      const top = Math.max(rect.bottom + 6, 0);
+      setSuggestionsOverlayStyle({
+        top,
+        left: rect.left,
+        width: rect.width,
+        height: Math.max(window.innerHeight - top - 12, 180),
+      });
+    };
+
+    updateOverlayPosition();
+    window.addEventListener("resize", updateOverlayPosition);
+    window.addEventListener("scroll", updateOverlayPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateOverlayPosition);
+      window.removeEventListener("scroll", updateOverlayPosition, true);
+    };
+  }, [suggestionsLoading, searchSuggestions.length]);
+
+  useEffect(() => {
+    const hasSuggestionsUi =
+      suggestionsLoading || searchSuggestions.length > 0;
+    if (!hasSuggestionsUi || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      const inputWrap = searchInputWrapRef.current;
+      const suggestions = searchSuggestionsRef.current;
+      const target = event.target;
+      if (
+        (inputWrap && inputWrap.contains(target)) ||
+        (suggestions && suggestions.contains(target))
+      ) {
+        return;
+      }
+      setSearchSuggestions([]);
+      setSuggestionsLoading(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [suggestionsLoading, searchSuggestions.length]);
 
   const setNavOpen = (open) => {
     if (typeof window === "undefined") return;
@@ -605,18 +734,42 @@ export default function Header({
     if (typeof window !== "undefined") {
       window.localStorage.setItem("nav-open", "0");
     }
-    router.push(`/search-suggest?q=${encodeURIComponent(trimmed)}&scope=${scope}`);
+    const params = new URLSearchParams({
+      q: trimmed,
+      scope,
+    });
+    if (typeof window !== "undefined") {
+      const bibleTranslations = (
+        window.localStorage.getItem("bible_translations") ||
+        readCookie("bible_translations")
+      )
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const quranTranslations = (
+        window.localStorage.getItem("quran_translations") ||
+        readCookie("quran_translations")
+      )
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if ((scope === "tanakh" || scope === "nt") && bibleTranslations.length) {
+        params.set("translations", bibleTranslations.join(","));
+      }
+      if (scope === "quran" && quranTranslations.length) {
+        params.set("lang", quranTranslations[0]);
+      }
+    }
+    if (scope === "tanakh" || scope === "nt") {
+      if (currentSearchContext.book) params.set("currentBook", currentSearchContext.book);
+      if (currentSearchContext.chapter) {
+        params.set("currentChapter", String(currentSearchContext.chapter));
+      }
+    } else if (currentSearchContext.sura) {
+      params.set("currentSura", String(currentSearchContext.sura));
+    }
+    router.push(`/search-suggest?${params.toString()}`);
   };
-
-  const toggleAlignmentMode = () => {
-    if (typeof window === "undefined") return;
-    const next = !alignmentMode;
-    setAlignmentMode(next);
-    window.localStorage.setItem("tanakh_alignment_mode", next ? "1" : "0");
-    window.dispatchEvent(new Event("tanakh-alignment-mode-change"));
-  };
-
-  // translation toggle moved to floating control on Tanakh pages
 
   const bookOptions = useMemo(() => Object.keys(tanakhMenu), [tanakhMenu]);
   const selectedBookLabel = useMemo(
@@ -649,7 +802,7 @@ export default function Header({
 
   const renderSearchForm = () => (
     <form className="header-search" onSubmit={runTextSearch}>
-      <div className="header-search-input-wrap">
+      <div className="header-search-input-wrap" ref={searchInputWrapRef}>
         <input
           type="text"
           className="form-control form-control-sm"
@@ -658,7 +811,23 @@ export default function Header({
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         {(suggestionsLoading || searchSuggestions.length > 0) && (
-          <div className="header-search-suggestions">
+          <>
+            <div
+              className="header-search-backdrop"
+              style={
+                suggestionsOverlayStyle
+                  ? {
+                      top: suggestionsOverlayStyle.top,
+                      height: suggestionsOverlayStyle.height,
+                    }
+                  : undefined
+              }
+            />
+            <div
+              ref={searchSuggestionsRef}
+              className="header-search-suggestions"
+              style={suggestionsOverlayStyle || undefined}
+            >
             <div className="header-search-suggestions-list">
               {searchSuggestions.map((item) => (
                 <button
@@ -681,7 +850,7 @@ export default function Header({
                 <div className="header-search-suggestion-empty">Searching…</div>
               )}
             </div>
-            {!suggestionsLoading && searchQuery.trim().length >= 2 && (
+            {searchQuery.trim().length >= 2 && (
               <button
                 type="button"
                 className="header-search-full-results"
@@ -690,7 +859,8 @@ export default function Header({
                 Show full results
               </button>
             )}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </form>
@@ -806,119 +976,121 @@ export default function Header({
               </div>
             </div>
           )}
-          {(currentBook !== "Quran") && (isTanakh || isNt) && (
-            <div className="header-sura-inline header-bible-selectors d-none d-lg-flex">
-              <div className="dropdown w-100 header-dropdown">
-                <button
-                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
-                  type="button"
-                  id="bookDropdownInline"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
-                  {selectedBookLabel || "Select a book"}
-                </button>
-                <div
-                  className="dropdown-menu w-100"
-                  aria-labelledby="bookDropdownInline"
-                  style={{ maxHeight: "240px", overflowY: "auto" }}
-                >
-                  <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() => handleBookChange({ target: { value: "" } })}
-                  >
-                    Select a book
-                  </button>
-                  {bookOptions.map((book) => (
-                    <button
-                      key={book}
-                      className="dropdown-item"
-                      type="button"
-                      onClick={() => handleBookChange({ target: { value: book } })}
-                    >
-                      {getBookLabel(book)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="dropdown w-100 header-dropdown">
-                <button
-                  className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
-                  type="button"
-                  id="chapterDropdownInline"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                  disabled={!selectedTanakhBook}
-                >
-                  {selectedTanakhChapter || "Select a chapter"}
-                </button>
-                <div
-                  className="dropdown-menu w-100"
-                  aria-labelledby="chapterDropdownInline"
-                  style={{ maxHeight: "240px", overflowY: "auto" }}
-                >
-                  <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() =>
-                      handleChapterChange({ target: { value: "" } })
-                    }
-                    disabled={!selectedTanakhBook}
-                  >
-                    Select a chapter
-                  </button>
-                  {chapterOptions.map((ch) => (
-                    <button
-                      key={ch}
-                      className="dropdown-item"
-                      type="button"
-                      onClick={() =>
-                        handleChapterChange({ target: { value: ch } })
-                      }
-                    >
-                      {ch}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       <div className="header-row header-row-bottom d-none d-lg-flex w-100">
+        {(isTanakh || isNt) ? (
+          <div className="header-bible-panel-desktop w-100">
+            {showTranslationToggle && (
+              <div className="header-bible-panel-actions">
+                <TranslationToggle />
+                <Link
+                  className="header-settings-link"
+                  href={settingsHref}
+                >
+                  Settings
+                </Link>
+              </div>
+            )}
+            <div className="header-bible-panel-controls">
+              <div className="header-bible-selectors">
+                <div className="dropdown w-100 header-dropdown">
+                  <button
+                    className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                    type="button"
+                    id="bookDropdownPanel"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
+                    {selectedBookLabel || "Select a book"}
+                  </button>
+                  <div
+                    className="dropdown-menu w-100"
+                    aria-labelledby="bookDropdownPanel"
+                    style={{ maxHeight: "240px", overflowY: "auto" }}
+                  >
+                    <button
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() => handleBookChange({ target: { value: "" } })}
+                    >
+                      Select a book
+                    </button>
+                    {bookOptions.map((book) => (
+                      <button
+                        key={book}
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => handleBookChange({ target: { value: book } })}
+                      >
+                        {getBookLabel(book)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="dropdown w-100 header-dropdown">
+                  <button
+                    className="btn btn-outline-secondary dropdown-toggle w-100 text-left"
+                    type="button"
+                    id="chapterDropdownPanel"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    disabled={!selectedTanakhBook}
+                  >
+                    {selectedTanakhChapter || "Select a chapter"}
+                  </button>
+                  <div
+                    className="dropdown-menu w-100"
+                    aria-labelledby="chapterDropdownPanel"
+                    style={{ maxHeight: "240px", overflowY: "auto" }}
+                  >
+                    <button
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() =>
+                        handleChapterChange({ target: { value: "" } })
+                      }
+                      disabled={!selectedTanakhBook}
+                    >
+                      Select a chapter
+                    </button>
+                    {chapterOptions.map((ch) => (
+                      <button
+                        key={ch}
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() =>
+                          handleChapterChange({ target: { value: ch } })
+                        }
+                      >
+                        {ch}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {renderSearchForm()}
+            </div>
+          </div>
+        ) : (
+          <>
           {renderSearchForm()}
           {showTranslationToggle && (
             <div className="header-translation-inline d-flex align-items-center">
-              {isTanakh && (
-                <button
-                  type="button"
-                  className={`btn btn-sm mr-2 ${
-                    alignmentMode ? "btn-info" : "btn-outline-secondary"
-                  }`}
-                  onClick={toggleAlignmentMode}
-                  title="Toggle Hebrew/KJV alignment highlights"
-                >
-                  Link colors
-                </button>
-              )}
               <TranslationToggle />
               <Link
-                className="btn btn-sm btn-outline-secondary ml-2 show-translations-link"
+                className="header-settings-link ml-2"
                 href={settingsHref}
               >
-                Translation settings
+                Settings
               </Link>
             </div>
           )}
-          <div className="ml-auto">
-            <Link className="small text-muted mb-0" href="/contact">
-              Contact
-            </Link>
-          </div>
+          </>
+        )}
         </div>
 
       <div className="collapse navbar-collapse" id="navbarContent" dir="rtl">
@@ -1011,27 +1183,13 @@ export default function Header({
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-lg-none">
             {showTranslationToggle && (
               <div className="form-group d-flex align-items-center justify-content-between mb-3">
-                <div className="d-flex align-items-center">
-                  <Link
-                    className="btn btn-sm btn-outline-secondary show-translations-link mr-2"
-                    href={settingsHref}
-                  >
-                    Translation settings
-                  </Link>
-                  {isTanakh && (
-                    <button
-                      type="button"
-                      className={`btn btn-sm mr-2 ${
-                        alignmentMode ? "btn-info" : "btn-outline-secondary"
-                      }`}
-                      onClick={toggleAlignmentMode}
-                      title="Toggle Hebrew/KJV alignment highlights"
-                    >
-                      Link colors
-                    </button>
-                  )}
-                </div>
                 <TranslationToggle />
+                <Link
+                  className="header-settings-link"
+                  href={settingsHref}
+                >
+                  Settings
+                </Link>
               </div>
             )}
             <div className="form-group">
@@ -1116,29 +1274,29 @@ export default function Header({
                 </div>
               </div>
             </div>
+            <div className="form-group mb-0">
+              {renderSearchForm()}
+            </div>
           </div>
         ) : showTranslationToggle ? (
           <div className="w-100 mt-3 p-3 bg-white rounded shadow-sm d-md-none">
             <div className="form-group d-flex align-items-center justify-content-between mb-0">
               <Link
-                className="btn btn-sm btn-outline-secondary show-translations-link"
+                className="header-settings-link"
                 href={settingsHref}
               >
-                Translation settings
+                Settings
               </Link>
               <TranslationToggle />
             </div>
           </div>
         ) : null}
 
-        <div className="d-lg-none mt-3 mb-3">
-          {renderSearchForm()}
-        </div>
-        <div className="d-lg-none mb-3">
-          <Link className="small text-muted" href="/contact">
-            Contact
-          </Link>
-        </div>
+        {!(isTanakh || isNt) && (
+          <div className="d-lg-none mt-3 mb-3">
+            {renderSearchForm()}
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -108,6 +108,9 @@ async function fetchSuggestSearch({
   limit = 20,
   translationIds,
   quranLang,
+  currentBook,
+  currentChapter,
+  currentSura,
 }) {
   if (!query) {
     return { ok: false, results: [], offset: 0, limit: 20, returned: 0, hasMore: false };
@@ -120,6 +123,9 @@ async function fetchSuggestSearch({
   });
   if (translationIds) params.set("translations", translationIds);
   if (quranLang) params.set("lang", quranLang);
+  if (currentBook) params.set("currentBook", currentBook);
+  if (currentChapter) params.set("currentChapter", String(currentChapter));
+  if (currentSura) params.set("currentSura", String(currentSura));
   const res = await fetch(`${API_BASE}/search/text/suggest/full?${params.toString()}`, {
     cache: "no-store",
   });
@@ -188,8 +194,13 @@ export default async function SearchSuggestPage({ searchParams }) {
   const scope = String(searchParams?.scope || "quran").toLowerCase();
   const offset = Math.max(0, Number(searchParams?.offset || 0));
   const limit = Math.min(Math.max(Number(searchParams?.limit || 20) || 20, 1), 50);
-  const translationLang = getTranslationLang();
-  const bibleTranslationIds = getBibleTranslationIds();
+  const translationLang =
+    String(searchParams?.lang || "").trim() || getTranslationLang();
+  const bibleTranslationIds =
+    String(searchParams?.translations || "").trim() || getBibleTranslationIds();
+  const currentBook = String(searchParams?.currentBook || "").trim();
+  const currentChapter = String(searchParams?.currentChapter || "").trim();
+  const currentSura = String(searchParams?.currentSura || "").trim();
   const suraNameTranslations = await fetchSuraNameTranslations(translationLang);
   const headerData = await fetchHeaderData(scope);
 
@@ -204,6 +215,9 @@ export default async function SearchSuggestPage({ searchParams }) {
         limit,
         translationIds: bibleTranslationIds,
         quranLang: translationLang,
+        currentBook,
+        currentChapter,
+        currentSura,
       });
     } catch (err) {
       error = err?.message || "Autocomplete search failed.";
@@ -252,7 +266,7 @@ export default async function SearchSuggestPage({ searchParams }) {
             {currentOffset > 0 ? (
               <a
                 className="btn btn-outline-secondary btn-sm"
-                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}${currentBook ? `&currentBook=${encodeURIComponent(currentBook)}` : ""}${currentChapter ? `&currentChapter=${encodeURIComponent(currentChapter)}` : ""}${currentSura ? `&currentSura=${encodeURIComponent(currentSura)}` : ""}`}
               >
                 Previous
               </a>
@@ -260,7 +274,7 @@ export default async function SearchSuggestPage({ searchParams }) {
             {data.hasMore ? (
               <a
                 className="btn btn-primary btn-sm"
-                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}${currentBook ? `&currentBook=${encodeURIComponent(currentBook)}` : ""}${currentChapter ? `&currentChapter=${encodeURIComponent(currentChapter)}` : ""}${currentSura ? `&currentSura=${encodeURIComponent(currentSura)}` : ""}`}
               >
                 Next
               </a>
@@ -394,10 +408,20 @@ export default async function SearchSuggestPage({ searchParams }) {
 
               {item.translations?.length ? (
                 <div className="translation-container mt-2">
-                  <VerseTranslations translations={item.translations} />
+                  <VerseTranslations
+                    translations={item.translations}
+                    highlightQuery={query}
+                    highlightCorpus={item.corpus}
+                  />
                 </div>
               ) : null}
-              {item.corpus === "quran" && <SearchQuranTranslations results={[item]} />}
+              {item.corpus === "quran" && (
+                <SearchQuranTranslations
+                  results={[item]}
+                  highlightQuery={query}
+                  highlightCorpus={item.corpus}
+                />
+              )}
             </div>
           </div>
         );
@@ -420,7 +444,7 @@ export default async function SearchSuggestPage({ searchParams }) {
             {currentOffset > 0 ? (
               <a
                 className="btn btn-outline-secondary btn-sm"
-                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${prevOffset}&limit=${currentLimit}${currentBook ? `&currentBook=${encodeURIComponent(currentBook)}` : ""}${currentChapter ? `&currentChapter=${encodeURIComponent(currentChapter)}` : ""}${currentSura ? `&currentSura=${encodeURIComponent(currentSura)}` : ""}`}
               >
                 Previous
               </a>
@@ -428,7 +452,7 @@ export default async function SearchSuggestPage({ searchParams }) {
             {data.hasMore ? (
               <a
                 className="btn btn-primary btn-sm"
-                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}`}
+                href={`/search-suggest?q=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}&offset=${currentOffset + returned}&limit=${currentLimit}${currentBook ? `&currentBook=${encodeURIComponent(currentBook)}` : ""}${currentChapter ? `&currentChapter=${encodeURIComponent(currentChapter)}` : ""}${currentSura ? `&currentSura=${encodeURIComponent(currentSura)}` : ""}`}
               >
                 Next
               </a>

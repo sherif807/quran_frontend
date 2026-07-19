@@ -3,6 +3,7 @@ import SpeechSettings from "../components/SpeechSettings";
 import QuranTranslationSettings from "../components/QuranTranslationSettings";
 import BibleTranslationSettings from "../components/BibleTranslationSettings";
 import BackButton from "../components/BackButton";
+import Link from "next/link";
 
 export const metadata = {
   title: "Settings",
@@ -34,6 +35,12 @@ export default function SettingsPage({ searchParams }) {
       <Header section={section} />
       <div className="settings-header mb-3">
         <h3 className="mb-0">Settings</h3>
+      </div>
+
+      <div className="mb-4">
+        <Link className="header-settings-link" href="/contact">
+          Contact
+        </Link>
       </div>
 
       {(showAll || showTanakh) && (

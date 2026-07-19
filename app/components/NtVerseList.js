@@ -134,10 +134,12 @@ export default function NtVerseList({
               </a>
             ))}
           </span>
-          <div className="d-flex align-items-start mt-2">
+          <div className="d-flex align-items-start mt-2" style={{ direction: "rtl" }}>
             <PlayGreek text={verseProps.words.map((w) => w.text).join(" ")} />
             <CopyGreek text={verseProps.words.map((w) => w.text).join(" ")} />
-            <VerseTranslations translations={verseProps.translations || []} />
+            <div style={{ direction: "ltr", flex: "1 1 auto" }}>
+              <VerseTranslations translations={verseProps.translations || []} />
+            </div>
           </div>
         </div>
       ))}

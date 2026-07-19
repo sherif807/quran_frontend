@@ -15,7 +15,11 @@ const readCookie = (key) => {
   return match ? decodeURIComponent(match.split("=")[1]) : "";
 };
 
-export default function SearchQuranTranslations({ results = [] }) {
+export default function SearchQuranTranslations({
+  results = [],
+  highlightQuery = "",
+  highlightCorpus = "",
+}) {
   const [translationsByRef, setTranslationsByRef] = useState({});
 
   const refs = useMemo(() => {
@@ -62,7 +66,11 @@ export default function SearchQuranTranslations({ results = [] }) {
         if (!translations.length) return null;
         return (
           <div key={`t-${key}`} className="translation-container mt-2">
-            <VerseTranslations translations={translations} />
+            <VerseTranslations
+              translations={translations}
+              highlightQuery={highlightQuery}
+              highlightCorpus={highlightCorpus}
+            />
           </div>
         );
       })}

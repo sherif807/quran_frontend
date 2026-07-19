@@ -4,6 +4,62 @@ import { useMemo } from "react";
 
 const hasHtml = (text = "") => /<[^>]+>/.test(text);
 
+const escapeHtml = (value) =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const stripArabic = (value) =>
+  String(value || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/[\u0640]/g, "")
+    .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
+    .replace(/[\u0649]/g, "\u064A")
+    .replace(/[\u0629]/g, "\u0647")
+    .replace(/[\u0624\u0626\u0621]/g, "\u0621")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildArabicRegex = (query) => {
+  const cleaned = stripArabic(query).replace(/\s+/g, "");
+  if (!cleaned) return null;
+  const chars = Array.from(cleaned).map((ch) => {
+    if (ch === "\u0627") return "[\u0627\u0671\u0622\u0623\u0625]";
+    return ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  });
+  const sep = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640\\s]*";
+  return new RegExp(chars.join(sep), "gi");
+};
+
+const highlightTranslationText = (text, query, corpus) => {
+  if (!text || !query) return text;
+  if (hasHtml(text)) return text;
+
+  const source = String(text);
+  const regex =
+    corpus === "quran" && /[\u0600-\u06FF]/.test(query)
+      ? buildArabicRegex(query)
+      : new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  if (!regex) return escapeHtml(source);
+
+  let lastIndex = 0;
+  let result = "";
+  let match;
+  while ((match = regex.exec(source))) {
+    const start = match.index;
+    const end = start + match[0].length;
+    result += escapeHtml(source.slice(lastIndex, start));
+    result += `<span class="text-info">${escapeHtml(source.slice(start, end))}</span>`;
+    lastIndex = end;
+    if (!regex.global) break;
+  }
+  result += escapeHtml(source.slice(lastIndex));
+  return result;
+};
+
 function renderAlignedTranslation(text, alignments, toneBySequence) {
   if (!text || !Array.isArray(alignments) || !alignments.length) {
     return text;
@@ -64,6 +120,8 @@ export default function VerseTranslations({
   translations = [],
   alignmentMode = false,
   alignmentToneBySequence = {},
+  highlightQuery = "",
+  highlightCorpus = "",
 }) {
 
   const sortedTranslations = useMemo(() => {
@@ -101,7 +159,13 @@ export default function VerseTranslations({
               direction: t.direction || "ltr",
               textAlign: t.direction === "rtl" ? "right" : "left",
             }}
-            dangerouslySetInnerHTML={{ __html: t.translationText }}
+            dangerouslySetInnerHTML={{
+              __html: highlightTranslationText(
+                t.translationText,
+                highlightQuery,
+                highlightCorpus
+              ),
+            }}
           />
         )
       ))}
