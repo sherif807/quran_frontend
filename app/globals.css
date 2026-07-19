@@ -877,7 +877,7 @@ input:checked + .slider:before {
 
   .header-search-input-wrap.mobile-search-pinned {
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
     left: 10px;
     right: 10px;
     z-index: 1060;

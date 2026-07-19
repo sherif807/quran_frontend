@@ -605,6 +605,41 @@ export default function Header({
   }, []);
 
   useEffect(() => {
+    if (
+      !mobileSearchPinned ||
+      typeof window === "undefined" ||
+      window.innerWidth > 991.98
+    ) {
+      return undefined;
+    }
+
+    const ensureSearchAtTop = () => {
+      const anchor =
+        searchInputWrapRef.current?.closest(".navbar") || searchInputWrapRef.current;
+      if (anchor && typeof anchor.scrollIntoView === "function") {
+        anchor.scrollIntoView({
+          block: "start",
+          inline: "nearest",
+          behavior: "auto",
+        });
+      }
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    const timer = window.setTimeout(ensureSearchAtTop, 60);
+    window.visualViewport?.addEventListener("resize", ensureSearchAtTop);
+    window.visualViewport?.addEventListener("scroll", ensureSearchAtTop);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.visualViewport?.removeEventListener("resize", ensureSearchAtTop);
+      window.visualViewport?.removeEventListener("scroll", ensureSearchAtTop);
+    };
+  }, [mobileSearchPinned]);
+
+  useEffect(() => {
     const hasSuggestionsUi =
       suggestionsLoading || searchSuggestions.length > 0;
     if (!hasSuggestionsUi) {
@@ -680,20 +715,6 @@ export default function Header({
       );
     }
     setMobileSearchPinned(true);
-    window.setTimeout(() => {
-      const anchor =
-        searchInputWrapRef.current?.closest(".navbar") || searchInputWrapRef.current;
-      if (anchor && typeof anchor.scrollIntoView === "function") {
-        anchor.scrollIntoView({
-          block: "start",
-          inline: "nearest",
-          behavior: "auto",
-        });
-      }
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 30);
   };
 
   const handleSearchBlur = () => {
