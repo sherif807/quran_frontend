@@ -658,9 +658,14 @@ export default function Header({
   const handleSearchFocus = () => {
     if (typeof window === "undefined" || window.innerWidth > 991.98) return;
     window.setTimeout(() => {
-      searchInputWrapRef.current?.scrollIntoView({
-        block: "nearest",
-        inline: "nearest",
+      const nav = document.querySelector(".navbar");
+      const navTop =
+        nav && typeof nav.getBoundingClientRect === "function"
+          ? nav.getBoundingClientRect().top + window.scrollY
+          : 0;
+      window.scrollTo({
+        top: Math.max(0, navTop - 6),
+        behavior: "smooth",
       });
     }, 80);
   };
