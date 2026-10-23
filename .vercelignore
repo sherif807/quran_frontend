@@ -1,0 +1,5 @@
+# Deployment configuration lives in the existing Vercel project.
+# Keep local environment files out of direct-source uploads.
+.env
+.env.local
+.env.*.local

@@ -741,7 +741,12 @@ export default function Header({
     };
   }, [suggestionsLoading, searchSuggestions.length]);
 
-  const handleSearchFocus = () => {
+  const handleSearchFocus = (event) => {
+    const input = event?.currentTarget;
+    if (input) {
+      searchInputRef.current = input;
+      searchInputWrapRef.current = input.closest(".header-search-input-wrap");
+    }
     if (typeof window === "undefined" || window.innerWidth > 991.98) return;
     if (searchBlurTimerRef.current) {
       window.clearTimeout(searchBlurTimerRef.current);
@@ -989,7 +994,13 @@ export default function Header({
               style={suggestionsBackdropStyle || undefined}
             />
             <div
-              ref={searchSuggestionsRef}
+              ref={(element) => {
+                // Desktop and mobile each render a copy of this form. Keep the
+                // visible panel as the active target for positioning/click-away.
+                if (element?.getClientRects().length) {
+                  searchSuggestionsRef.current = element;
+                }
+              }}
               className="header-search-suggestions"
               style={suggestionsOverlayStyle || undefined}
             >
