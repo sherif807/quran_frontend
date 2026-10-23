@@ -74,7 +74,14 @@ const matchesArabicWord = (word, queryTokens) => {
   if (!cleanedWord) return false;
   return queryTokens.some((token) => {
     const regex = buildArabicTokenRegex(token);
-    return regex ? regex.test(cleanedWord) : false;
+    // Keep the full-results behavior aligned with autocomplete: a search term
+    // may include a connected prefix (for example \"و\") while the displayed
+    // Quran word begins at the lexical stem (for example \"قلبه\").
+    return (
+      (regex ? regex.test(cleanedWord) : false) ||
+      cleanedWord.includes(token) ||
+      token.includes(cleanedWord)
+    );
   });
 };
 
