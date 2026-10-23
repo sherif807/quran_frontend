@@ -191,6 +191,46 @@ const getDisplayWordNormalizer = (word) => {
   return normalizeLatin;
 };
 
+const hasArabicStemMatch = (word, token) => {
+  const removeLeadingClitic = (value) => value.replace(/^[وفبكل]/, "");
+  const left = removeLeadingClitic(stripArabic(word).replace(/\s+/g, ""));
+  const right = removeLeadingClitic(stripArabic(token).replace(/\s+/g, ""));
+  if (left.length < 3 || right.length < 3) return false;
+
+  for (let leftStart = 0; leftStart < left.length; leftStart += 1) {
+    for (let rightStart = 0; rightStart < right.length; rightStart += 1) {
+      let length = 0;
+      while (
+        left[leftStart + length] &&
+        left[leftStart + length] === right[rightStart + length]
+      ) {
+        length += 1;
+        if (length >= 3) return true;
+      }
+    }
+  }
+  return false;
+};
+
+const matchesSuggestionToken = (part, tokens) => {
+  const normalizeWord = getDisplayWordNormalizer(part);
+  const normalizedPart = normalizeWord(part);
+  const isArabicPart = /[\u0600-\u06FF]/.test(part);
+  if (!normalizedPart) return false;
+  return tokens.some((token) => {
+    if (!token) return false;
+    return (
+      normalizedPart.includes(token) ||
+      ((!isArabicPart || normalizedPart.length >= 3) &&
+        token.includes(normalizedPart)) ||
+      normalizedPart.startsWith(token) ||
+      ((!isArabicPart || normalizedPart.length >= 3) &&
+        token.startsWith(normalizedPart)) ||
+      (isArabicPart && hasArabicStemMatch(normalizedPart, token))
+    );
+  });
+};
+
 const renderHighlightedSuggestionText = (text, query) => {
   const source = String(text || "");
   const tokens = getSuggestionQueryTokens(query);
@@ -207,17 +247,7 @@ const renderHighlightedSuggestionText = (text, query) => {
 
   parts.forEach((part, index) => {
     if (!part.trim()) return;
-    const normalizeWord = getDisplayWordNormalizer(part);
-    const normalizedPart = normalizeWord(part);
-    const isMatch = tokens.some((token) => {
-      if (!token) return false;
-      return (
-        normalizedPart.includes(token) ||
-        token.includes(normalizedPart) ||
-        normalizedPart.startsWith(token) ||
-        token.startsWith(normalizedPart)
-      );
-    });
+    const isMatch = matchesSuggestionToken(part, tokens);
     if (isMatch) {
       matchWordIndexes.push(index);
     }
@@ -303,17 +333,7 @@ const renderHighlightedSuggestionText = (text, query) => {
     startIndex > 0 ? <span key="prefix">… </span> : null,
     ...visibleParts.map((part, index) => {
       if (!part.trim()) return part;
-      const normalizeWord = getDisplayWordNormalizer(part);
-      const normalizedPart = normalizeWord(part);
-      const isMatch = tokens.some((token) => {
-        if (!token) return false;
-        return (
-          normalizedPart.includes(token) ||
-          token.includes(normalizedPart) ||
-          normalizedPart.startsWith(token) ||
-          token.startsWith(normalizedPart)
-        );
-      });
+      const isMatch = matchesSuggestionToken(part, tokens);
       return isMatch ? (
         <span
           key={`${part}-${startIndex + index}`}

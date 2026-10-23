@@ -69,6 +69,29 @@ const buildArabicTokenRegex = (token) => {
   return new RegExp(buildPattern(token));
 };
 
+const hasArabicStemMatch = (word, token) => {
+  const removeLeadingClitic = (value) => value.replace(/^[وفبكل]/, "");
+  const left = removeLeadingClitic(stripArabic(word).replace(/\s+/g, ""));
+  const right = removeLeadingClitic(stripArabic(token).replace(/\s+/g, ""));
+  if (left.length < 3 || right.length < 3) return false;
+
+  // Search may return a related inflection whose shared Arabic stem is not a
+  // complete substring of the typed form (for example قلب in وقلبه/تقلبهم).
+  for (let leftStart = 0; leftStart < left.length; leftStart += 1) {
+    for (let rightStart = 0; rightStart < right.length; rightStart += 1) {
+      let length = 0;
+      while (
+        left[leftStart + length] &&
+        left[leftStart + length] === right[rightStart + length]
+      ) {
+        length += 1;
+        if (length >= 3) return true;
+      }
+    }
+  }
+  return false;
+};
+
 const matchesArabicWord = (word, queryTokens) => {
   const cleanedWord = stripArabic(word).replace(/\s+/g, "");
   if (!cleanedWord) return false;
@@ -80,7 +103,8 @@ const matchesArabicWord = (word, queryTokens) => {
     return (
       (regex ? regex.test(cleanedWord) : false) ||
       cleanedWord.includes(token) ||
-      token.includes(cleanedWord)
+      (cleanedWord.length >= 3 && token.includes(cleanedWord)) ||
+      hasArabicStemMatch(cleanedWord, token)
     );
   });
 };
