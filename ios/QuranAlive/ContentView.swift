@@ -307,11 +307,16 @@ private struct QuranVerse: Decodable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(Int.self, forKey: .id)
-        surahNumber = try c.decode(Int.self, forKey: .surahNumber)
-        verseNumber = try c.decode(Int.self, forKey: .verseNumber)
-        words = try c.decode([RawQuranWord].self, forKey: .words).map {
-            QuranWord(position: $0.position, text: $0.wordText, surahNumber: surahNumber, verseNumber: verseNumber)
+        let decodedID = try c.decode(Int.self, forKey: .id)
+        let decodedSurahNumber = try c.decode(Int.self, forKey: .surahNumber)
+        let decodedVerseNumber = try c.decode(Int.self, forKey: .verseNumber)
+        let decodedWords = try c.decode([RawQuranWord].self, forKey: .words)
+
+        id = decodedID
+        surahNumber = decodedSurahNumber
+        verseNumber = decodedVerseNumber
+        words = decodedWords.map {
+            QuranWord(position: $0.position, text: $0.wordText, surahNumber: decodedSurahNumber, verseNumber: decodedVerseNumber)
         }
     }
 }
