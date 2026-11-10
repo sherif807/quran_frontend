@@ -20,7 +20,7 @@ workflows:
           xcodegen generate
       - name: Apply managed signing profiles
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly": true}'
       - name: Build signed IPA
         script: |
           xcode-project build-ipa \
@@ -32,3 +32,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - QuranAlive Internal
