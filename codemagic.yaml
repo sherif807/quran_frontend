@@ -22,7 +22,13 @@ workflows:
         script: |
           xcode-project use-profiles
       - name: Build signed IPA
-        script: xcode-project build-ipa --project "$CM_BUILD_DIR/ios/QuranAlive.xcodeproj" --scheme QuranAlive
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/ios/QuranAlive.xcodeproj" \
+            --scheme QuranAlive
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
