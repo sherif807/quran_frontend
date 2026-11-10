@@ -39,7 +39,12 @@ private struct QuranReaderView: View {
                 ProgressView("Loading Quran…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = reader.error, reader.surah == nil {
-                ReaderStatusView(title: "Couldn’t load the Quran", icon: "wifi.exclamationmark", detail: error)
+                ReaderStatusView(
+                    title: "Couldn’t load the Quran",
+                    icon: "wifi.exclamationmark",
+                    detail: error,
+                    retry: { Task { await reader.loadSurah(reader.selectedSurahID) } }
+                )
             } else if let surah = reader.surah {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -230,7 +235,9 @@ private final class QuranReaderModel: ObservableObject {
     @Published private(set) var surahs: [Surah] = []
     @Published private(set) var surah: Surah?
     @Published private(set) var verses: [QuranVerse] = []
-    @Published private(set) var isLoading = false
+    // Start in an explicit loading state so the reader never presents as an empty page
+    // before its first API request begins.
+    @Published private(set) var isLoading = true
     @Published private(set) var error: String?
     @Published private(set) var selectedSurahID = 1
 
@@ -303,7 +310,12 @@ private struct QuranVerse: Decodable, Identifiable {
     let verseNumber: Int
     let words: [QuranWord]
 
-    private enum CodingKeys: String, CodingKey { case id, surahNumber, verseNumber, words }
+    // The production API calls this `suraNumber`, while the native model uses the
+    // clearer `surahNumber`. Keeping this mapping explicit prevents a silent reader
+    // decode failure.
+    private enum CodingKeys: String, CodingKey {
+        case id, surahNumber = "suraNumber", verseNumber, words
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -376,12 +388,18 @@ private struct ReaderStatusView: View {
     let title: String
     let icon: String
     let detail: String
+    var retry: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon).font(.largeTitle).foregroundStyle(.secondary)
             Text(title).font(.headline)
             Text(detail).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            if let retry {
+                Button("Try again", action: retry)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+            }
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
