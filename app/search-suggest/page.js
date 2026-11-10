@@ -5,6 +5,10 @@ import SearchQuranTranslations from "../components/SearchQuranTranslations";
 import TanakhProgress from "../components/TanakhProgress";
 import VerseTranslations from "../components/VerseTranslations";
 import { cookies } from "next/headers";
+import {
+  matchesQuranArabicWord,
+  normalizeQuranArabicForMatch,
+} from "../lib/quranArabicMatch";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -19,18 +23,7 @@ export const metadata = {
   },
 };
 
-const stripArabic = (value) => {
-  if (!value) return "";
-  return String(value)
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
-    .replace(/[\u0640]/g, "")
-    .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
-    .replace(/[\u0649]/g, "\u064A")
-    .replace(/[\u0629]/g, "\u0647")
-    .replace(/[\u0624\u0626\u0621]/g, "\u0621")
-    .replace(/\s+/g, " ")
-    .trim();
-};
+const stripArabic = normalizeQuranArabicForMatch;
 
 const isArabic = (value) => /[\u0600-\u06FF]/.test(value || "");
 const isHebrew = (value) => /[\u0590-\u05FF]/.test(value || "");
@@ -54,60 +47,6 @@ const normalizeHebrew = (value) =>
 const normalizeGreek = (value) =>
   normalizeText(value).replace(/\u03c2/g, "\u03c3");
 
-const buildArabicTokenRegex = (token) => {
-  if (!token) return null;
-  const buildPattern = (value) => {
-    const chars = value.split("").map((ch) => {
-      if (ch === "ا") return "(?:ا|ء)?";
-      if (ch === "ه") return "[هة]";
-      if (ch === "ي") return "[يى]";
-      if (ch === "ء") return "(?:[ءؤئ]|ا)?";
-      return ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    });
-    return chars.join("");
-  };
-  return new RegExp(buildPattern(token));
-};
-
-const hasArabicStemMatch = (word, token) => {
-  const removeLeadingClitic = (value) => value.replace(/^[وفبكل]/, "");
-  const left = removeLeadingClitic(stripArabic(word).replace(/\s+/g, ""));
-  const right = removeLeadingClitic(stripArabic(token).replace(/\s+/g, ""));
-  if (left.length < 3 || right.length < 3) return false;
-
-  // Search may return a related inflection whose shared Arabic stem is not a
-  // complete substring of the typed form (for example قلب in وقلبه/تقلبهم).
-  for (let leftStart = 0; leftStart < left.length; leftStart += 1) {
-    for (let rightStart = 0; rightStart < right.length; rightStart += 1) {
-      let length = 0;
-      while (
-        left[leftStart + length] &&
-        left[leftStart + length] === right[rightStart + length]
-      ) {
-        length += 1;
-        if (length >= 3) return true;
-      }
-    }
-  }
-  return false;
-};
-
-const matchesArabicWord = (word, queryTokens) => {
-  const cleanedWord = stripArabic(word).replace(/\s+/g, "");
-  if (!cleanedWord) return false;
-  return queryTokens.some((token) => {
-    const regex = buildArabicTokenRegex(token);
-    // Keep the full-results behavior aligned with autocomplete: a search term
-    // may include a connected prefix (for example \"و\") while the displayed
-    // Quran word begins at the lexical stem (for example \"قلبه\").
-    return (
-      (regex ? regex.test(cleanedWord) : false) ||
-      cleanedWord.includes(token) ||
-      (cleanedWord.length >= 3 && token.includes(cleanedWord)) ||
-      hasArabicStemMatch(cleanedWord, token)
-    );
-  });
-};
 
 const matchesToken = (text, tokens) => {
   if (!text) return false;
@@ -367,7 +306,7 @@ export default async function SearchSuggestPage({ searchParams }) {
                   {item.words.map((word, widx) => {
                     if (!word.wordText) return null;
                     const isMatch = queryIsArabic
-                      ? matchesArabicWord(word.wordText, queryTokens)
+                      ? matchesQuranArabicWord(word.wordText, queryTokens)
                       : matchesToken(word.wordText, queryTokens);
                     return (
                       <span key={`${item.ref}-${widx}`} className="word-wrapper">

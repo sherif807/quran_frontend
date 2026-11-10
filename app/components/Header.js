@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useMemo, useEffect, useRef, useState } from "react";
 import TranslationToggle from "./TranslationToggle";
+import {
+  matchesQuranArabicWord,
+  normalizeQuranArabicForMatch,
+} from "../lib/quranArabicMatch";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4317/api";
@@ -127,14 +131,7 @@ const getSuggestionTextClass = (item) => {
   return "header-search-suggestion-text";
 };
 
-const stripArabic = (value) =>
-  String(value || "")
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
-    .replace(/[\u0640]/g, "")
-    .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
-    .replace(/[\u0649]/g, "\u064A")
-    .replace(/[\u0629]/g, "\u0647")
-    .replace(/[\u0624\u0626\u0621]/g, "\u0621");
+const stripArabic = normalizeQuranArabicForMatch;
 
 const normalizeHebrew = (value) =>
   String(value || "")
@@ -191,42 +188,19 @@ const getDisplayWordNormalizer = (word) => {
   return normalizeLatin;
 };
 
-const hasArabicStemMatch = (word, token) => {
-  const removeLeadingClitic = (value) => value.replace(/^[وفبكل]/, "");
-  const left = removeLeadingClitic(stripArabic(word).replace(/\s+/g, ""));
-  const right = removeLeadingClitic(stripArabic(token).replace(/\s+/g, ""));
-  if (left.length < 3 || right.length < 3) return false;
-
-  for (let leftStart = 0; leftStart < left.length; leftStart += 1) {
-    for (let rightStart = 0; rightStart < right.length; rightStart += 1) {
-      let length = 0;
-      while (
-        left[leftStart + length] &&
-        left[leftStart + length] === right[rightStart + length]
-      ) {
-        length += 1;
-        if (length >= 3) return true;
-      }
-    }
-  }
-  return false;
-};
-
 const matchesSuggestionToken = (part, tokens) => {
   const normalizeWord = getDisplayWordNormalizer(part);
   const normalizedPart = normalizeWord(part);
   const isArabicPart = /[\u0600-\u06FF]/.test(part);
   if (!normalizedPart) return false;
+  if (isArabicPart) return matchesQuranArabicWord(part, tokens);
   return tokens.some((token) => {
     if (!token) return false;
     return (
       normalizedPart.includes(token) ||
-      ((!isArabicPart || normalizedPart.length >= 3) &&
-        token.includes(normalizedPart)) ||
+      token.includes(normalizedPart) ||
       normalizedPart.startsWith(token) ||
-      ((!isArabicPart || normalizedPart.length >= 3) &&
-        token.startsWith(normalizedPart)) ||
-      (isArabicPart && hasArabicStemMatch(normalizedPart, token))
+      token.startsWith(normalizedPart)
     );
   });
 };
