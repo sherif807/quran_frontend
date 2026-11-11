@@ -22,7 +22,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: QuranAlive
         INFOPLIST_KEY_CFBundleIconName: AppIcon
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "8"
+        CURRENT_PROJECT_VERSION: "9"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # QuranAlive uses Apple's system TLS only; declaring this avoids a
         # manual export-compliance gate for every internal TestFlight build.
