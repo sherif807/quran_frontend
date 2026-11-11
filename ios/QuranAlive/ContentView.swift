@@ -74,7 +74,10 @@ private struct QuranReaderView: View {
                             .foregroundStyle(.secondary)
 
                         ForEach(reader.verses) { verse in
-                            QuranVerseCard(verse: verse) { word in
+                            QuranVerseCard(
+                                verse: verse,
+                                selectedWordLocation: selectedWord?.location
+                            ) { word in
                                 selectedWord = word
                             }
                         }
@@ -99,6 +102,7 @@ private struct QuranReaderView: View {
 
 private struct QuranVerseCard: View {
     let verse: QuranVerse
+    let selectedWordLocation: String?
     let onWordTap: (QuranWord) -> Void
 
     var body: some View {
@@ -111,9 +115,13 @@ private struct QuranVerseCard: View {
                 ForEach(verse.words) { word in
                     Button(word.text) { onWordTap(word) }
                         .font(.custom("Geeza Pro", size: 27))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(word.location == selectedWordLocation ? Color.teal : .primary)
                         .padding(.horizontal, 3)
                         .padding(.vertical, 2)
+                        .background(
+                            word.location == selectedWordLocation ? Color.teal.opacity(0.16) : .clear,
+                            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        )
                         .accessibilityLabel("\(word.text), word \(word.position)")
                 }
             }
@@ -137,41 +145,34 @@ private struct WordRootSheet: View {
                 if isLoading {
                     ProgressView("Looking up root…")
                 } else if let result {
-                    List {
-                        Section("Selected word") {
-                            Text(word.text)
-                                .font(.custom("Geeza Pro", size: 34))
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                                .environment(\.layoutDirection, .rightToLeft)
-                            Text("Position \(word.location)")
-                                .foregroundStyle(.secondary)
-                        }
-                        Section("Root") {
-                            Text(result.title)
-                                .font(.custom("Geeza Pro", size: 30))
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                                .environment(\.layoutDirection, .rightToLeft)
-                            Text("\(result.totalMatches) Quran occurrences")
-                                .foregroundStyle(.secondary)
-                        }
-                        if let morphology = result.wordsInfo.first {
-                            Section("Morphology") {
-                                if let tag = morphology.tag { LabeledContent("Part of speech", value: tag) }
-                                if let lemma = morphology.lemma { LabeledContent("Lemma", value: lemma) }
-                                if let root = morphology.root { LabeledContent("Root code", value: root) }
-                                if let features = morphology.newFeatures ?? morphology.features {
-                                    Text(features)
-                                        .font(.footnote.monospaced())
-                                        .textSelection(.enabled)
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 14) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(result.totalMatches) Quran occurrences")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                if let morphology = result.wordsInfo.first {
+                                    HStack(spacing: 12) {
+                                        if let lemma = morphology.lemma { Label(lemma, systemImage: "textformat") }
+                                        if let tag = morphology.tag { Label(tag, systemImage: "tag") }
+                                    }
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
                                 }
                             }
+                            .padding(.horizontal, 20)
+
+                            ForEach(result.versesArray) { verse in
+                                RootMatchVerseCard(verse: verse)
+                            }
                         }
+                        .padding(.vertical, 12)
                     }
                 } else {
                     ReaderStatusView(title: "Root unavailable", icon: "exclamationmark.triangle", detail: error ?? "Try again.")
                 }
             }
-            .navigationTitle("Word details")
+            .navigationTitle(result?.title ?? word.text)
             .navigationBarTitleDisplayMode(.inline)
         }
         .task { await loadRoot() }
@@ -184,6 +185,37 @@ private struct WordRootSheet: View {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+}
+
+private struct RootMatchVerseCard: View {
+    let verse: RootMatchVerse
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("\(verse.suraNumber):\(verse.verseNumber)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.teal)
+
+            FlowLayout(spacing: 7) {
+                ForEach(verse.words) { word in
+                    Text(word.wordText)
+                        .font(.custom("Geeza Pro", size: 25))
+                        .foregroundStyle(word.isHighlighted ? Color.teal : .primary)
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 2)
+                        .background(
+                            word.isHighlighted ? Color.teal.opacity(0.16) : .clear,
+                            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .environment(\.layoutDirection, .rightToLeft)
+        }
+        .padding(16)
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 16)
     }
 }
 
@@ -269,7 +301,7 @@ private enum QuranAPI {
         }
 
         func wordRoot(for location: String) async throws -> WordRootResponse {
-            try await load("quran/word-root/\(location)?limit=1", as: WordRootResponse.self)
+            try await load("quran/word-root/\(location)?offset=0&limit=50", as: WordRootResponse.self)
         }
 
         private func load<T: Decodable>(_ path: String, as type: T.Type) async throws -> T {
@@ -293,6 +325,22 @@ private struct WordRootResponse: Decodable {
     let title: String
     let totalMatches: Int
     let wordsInfo: [Morphology]
+    let versesArray: [RootMatchVerse]
+}
+
+private struct RootMatchVerse: Decodable, Identifiable {
+    let suraNumber: Int
+    let verseNumber: Int
+    let words: [RootMatchWord]
+    var id: String { "\(suraNumber):\(verseNumber)" }
+}
+
+private struct RootMatchWord: Decodable, Identifiable {
+    let position: Int
+    let wordText: String
+    let highlightWordNumber: Int?
+    var id: String { "\(position)-\(wordText)" }
+    var isHighlighted: Bool { highlightWordNumber == position }
 }
 
 private struct Surah: Decodable, Identifiable {
