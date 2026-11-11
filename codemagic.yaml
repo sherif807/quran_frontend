@@ -7,6 +7,9 @@ workflows:
       app_store_connect: QuranAlive Codemagic
     environment:
       xcode: latest
+      vars:
+        APP_STORE_CONNECT_APP_ID: "6832800234"
+        APP_STORE_CONNECT_INTERNAL_GROUP_ID: "62d6bbdb-d1e9-48f0-87d9-010976d269da"
       groups:
         - app_store_connect
       ios_signing:
@@ -26,9 +29,16 @@ workflows:
           xcode-project build-ipa \
             --project "$CM_BUILD_DIR/ios/QuranAlive.xcodeproj" \
             --scheme QuranAlive
+          BUILD_NUMBER=$(awk -F'"' '/CURRENT_PROJECT_VERSION:/ { print $2; exit }' ios/project.yml)
+          test -n "$BUILD_NUMBER"
+          echo "QURANALIVE_BUILD_NUMBER=$BUILD_NUMBER" >> "$CM_ENV"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
+      scripts:
+        - name: Verify internal TestFlight release through Apple API
+          script: |
+            ruby "$CM_BUILD_DIR/ios/scripts/release_internal_testflight.rb"
