@@ -16,7 +16,7 @@ GROUP_ID = ENV.fetch("APP_STORE_CONNECT_INTERNAL_GROUP_ID")
 BUILD_NUMBER = ENV.fetch("QURANALIVE_BUILD_NUMBER")
 ISSUER_ID = ENV.fetch("APP_STORE_CONNECT_ISSUER_ID")
 KEY_ID = ENV.fetch("APP_STORE_CONNECT_KEY_IDENTIFIER")
-PRIVATE_KEY = ENV.fetch("APP_STORE_CONNECT_PRIVATE_KEY")
+PRIVATE_KEY = Base64.strict_decode64(ENV.fetch("APP_STORE_CONNECT_PRIVATE_KEY_BASE64"))
 API_ROOT = "https://api.appstoreconnect.apple.com/v1"
 POLL_SECONDS = Integer(ENV.fetch("TESTFLIGHT_POLL_SECONDS", "30"))
 MAX_POLLS = Integer(ENV.fetch("TESTFLIGHT_MAX_POLLS", "60"))
@@ -59,9 +59,9 @@ def fetch_build
 end
 
 def build_in_group?(build_id)
-  response, parsed = request("get", "/builds/#{build_id}/betaGroups?limit=200")
-  fail_with_api(response, parsed, "Read build beta groups") unless response.is_a?(Net::HTTPSuccess)
-  Array(parsed["data"]).any? { |group| group["id"] == GROUP_ID }
+  response, parsed = request("get", "/betaGroups/#{GROUP_ID}/builds?limit=200")
+  fail_with_api(response, parsed, "Read internal TestFlight group builds") unless response.is_a?(Net::HTTPSuccess)
+  Array(parsed["data"]).any? { |build| build["id"] == build_id }
 end
 
 def attach_group(build_id)
