@@ -31,7 +31,13 @@ struct ContentView: View {
 private struct QuranReaderView: View {
     @StateObject private var reader = QuranReaderModel()
     @State private var showsSurahPicker = false
-    @State private var selectedWord: QuranWord?
+    @State private var researchTabs: [WordResearchTab] = []
+    @State private var activeResearchTabID: String?
+    @State private var showsResearchResults = true
+
+    private var activeResearchTab: WordResearchTab? {
+        researchTabs.first { $0.id == activeResearchTabID }
+    }
 
     var body: some View {
         Group {
@@ -69,16 +75,30 @@ private struct QuranReaderView: View {
                         }
                         .accessibilityHint("Choose another surah")
 
-                        Text("Tap any Arabic word to see its root and morphology.")
+                        Text("Tap words to open research tabs. Your open roots stay here while you compare words.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+
+                        if !researchTabs.isEmpty {
+                            WordResearchWorkspace(
+                                tabs: researchTabs,
+                                activeID: activeResearchTabID,
+                                showsResults: showsResearchResults,
+                                select: { id in
+                                    activeResearchTabID = id
+                                    showsResearchResults = true
+                                },
+                                toggleResults: { showsResearchResults.toggle() },
+                                close: closeResearchTab
+                            )
+                        }
 
                         ForEach(reader.verses) { verse in
                             QuranVerseCard(
                                 verse: verse,
-                                selectedWordLocation: selectedWord?.location
+                                selectedWordLocation: activeResearchTab?.word.location
                             ) { word in
-                                selectedWord = word
+                                openResearchTab(word)
                             }
                         }
                     }
@@ -94,9 +114,38 @@ private struct QuranReaderView: View {
                 Task { await reader.loadSurah(id) }
             }
         }
-        .sheet(item: $selectedWord) { word in
-            WordRootSheet(word: word)
+    }
+
+    private func openResearchTab(_ word: QuranWord) {
+        if let existing = researchTabs.first(where: { $0.word.location == word.location }) {
+            activeResearchTabID = existing.id
+        } else {
+            let tab = WordResearchTab(word: word)
+            researchTabs.append(tab)
+            activeResearchTabID = tab.id
+            Task { await loadRoot(for: tab.id, word: word) }
         }
+        showsResearchResults = true
+    }
+
+    private func closeResearchTab(_ id: String) {
+        guard let index = researchTabs.firstIndex(where: { $0.id == id }) else { return }
+        researchTabs.remove(at: index)
+        activeResearchTabID = researchTabs.last?.id
+        if researchTabs.isEmpty { showsResearchResults = false }
+    }
+
+    private func loadRoot(for id: String, word: QuranWord) async {
+        do {
+            let result = try await QuranAPI.shared.wordRoot(for: word.location)
+            guard let index = researchTabs.firstIndex(where: { $0.id == id }) else { return }
+            researchTabs[index].result = result
+        } catch {
+            guard let index = researchTabs.firstIndex(where: { $0.id == id }) else { return }
+            researchTabs[index].error = error.localizedDescription
+        }
+        guard let index = researchTabs.firstIndex(where: { $0.id == id }) else { return }
+        researchTabs[index].isLoading = false
     }
 }
 
@@ -133,58 +182,100 @@ private struct QuranVerseCard: View {
     }
 }
 
-private struct WordRootSheet: View {
-    let word: QuranWord
-    @State private var result: WordRootResponse?
-    @State private var isLoading = true
-    @State private var error: String?
+private struct WordResearchWorkspace: View {
+    let tabs: [WordResearchTab]
+    let activeID: String?
+    let showsResults: Bool
+    let select: (String) -> Void
+    let toggleResults: () -> Void
+    let close: (String) -> Void
 
-    var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Looking up root…")
-                } else if let result {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 14) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("\(result.totalMatches) Quran occurrences")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                if let morphology = result.wordsInfo.first {
-                                    HStack(spacing: 12) {
-                                        if let lemma = morphology.lemma { Label(lemma, systemImage: "textformat") }
-                                        if let tag = morphology.tag { Label(tag, systemImage: "tag") }
-                                    }
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-
-                            ForEach(result.versesArray) { verse in
-                                RootMatchVerseCard(verse: verse)
-                            }
-                        }
-                        .padding(.vertical, 12)
-                    }
-                } else {
-                    ReaderStatusView(title: "Root unavailable", icon: "exclamationmark.triangle", detail: error ?? "Try again.")
-                }
-            }
-            .navigationTitle(result?.title ?? word.text)
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .task { await loadRoot() }
+    private var activeTab: WordResearchTab? {
+        tabs.first { $0.id == activeID }
     }
 
-    private func loadRoot() async {
-        do {
-            result = try await QuranAPI.shared.wordRoot(for: word.location)
-        } catch {
-            self.error = error.localizedDescription
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Research tabs", systemImage: "rectangle.on.rectangle")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Button(action: toggleResults) {
+                    Label(showsResults ? "Hide results" : "Show results", systemImage: showsResults ? "chevron.up" : "chevron.down")
+                        .font(.footnote.weight(.semibold))
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(tabs) { tab in
+                        HStack(spacing: 5) {
+                            Button { select(tab.id) } label: {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(tab.word.text)
+                                        .font(.custom("Geeza Pro", size: 20))
+                                    Text(tab.rootLabel)
+                                        .font(.caption2.weight(.semibold))
+                                }
+                            }
+                            Button { close(tab.id) } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.caption)
+                            }
+                            .accessibilityLabel("Close \(tab.word.text) tab")
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .foregroundStyle(tab.id == activeID ? Color.teal : .primary)
+                        .background(tab.id == activeID ? Color.teal.opacity(0.16) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+            }
+
+            if showsResults, let tab = activeTab {
+                WordResearchResults(tab: tab)
+            }
         }
-        isLoading = false
+        .padding(14)
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+private struct WordResearchResults: View {
+    let tab: WordResearchTab
+
+    var body: some View {
+        Group {
+            if tab.isLoading {
+                ProgressView("Looking up \(tab.word.text)…")
+                    .frame(maxWidth: .infinity, minHeight: 72)
+            } else if let result = tab.result {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Root: \(tab.rootLabel)")
+                            .font(.headline)
+                        Spacer()
+                        Text("\(result.totalMatches) occurrences")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let morphology = result.wordsInfo.first {
+                        HStack(spacing: 12) {
+                            if let lemma = morphology.lemma { Label(lemma, systemImage: "textformat") }
+                            if let tag = morphology.tag { Label(tag, systemImage: "tag") }
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                    ForEach(result.versesArray) { verse in
+                        RootMatchVerseCard(verse: verse)
+                            .padding(.horizontal, -16)
+                    }
+                }
+            } else {
+                ReaderStatusView(title: "Root unavailable", icon: "exclamationmark.triangle", detail: tab.error ?? "Try again.")
+            }
+        }
     }
 }
 
@@ -390,6 +481,23 @@ private struct QuranWord: Identifiable {
     let verseNumber: Int
     var id: String { location }
     var location: String { "\(surahNumber):\(verseNumber):\(position)" }
+}
+
+private struct WordResearchTab: Identifiable {
+    let id: String
+    let word: QuranWord
+    var result: WordRootResponse?
+    var isLoading = true
+    var error: String?
+
+    init(word: QuranWord) {
+        self.id = word.location
+        self.word = word
+    }
+
+    var rootLabel: String {
+        result?.wordsInfo.first?.root ?? "Root…"
+    }
 }
 
 private struct Morphology: Decodable {
